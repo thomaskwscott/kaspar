@@ -1,0 +1,5 @@
+/demo/target/
+/.idea/
+/bin/spark-warehouse/
+/docker/resources/spark-2.4.5-bin-hadoop2.7/
+/docker/resources/spark-2.4.5-bin-hadoop2.7.tgz

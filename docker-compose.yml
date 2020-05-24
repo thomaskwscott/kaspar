@@ -1,0 +1,109 @@
+version: "2.3"
+services:
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:5.4.1
+    restart: always
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - 2181:2181
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  worker1:
+    image: kaspar-worker:1.0
+    hostname: worker1
+    container_name: worker1
+    cpus: 0.7
+    depends_on:
+      - zookeeper
+      - master
+    ports:
+      - 9091:9091
+      - 8081:8081
+    volumes:
+      - ./serviceConfig/spark-defaults.conf:/usr/local/spark/conf/spark-defaults.conf
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CLEAR:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: CLEAR
+      KAFKA_ADVERTISED_LISTENERS: CLEAR://worker1:9091
+      KAFKA_LOG4J_LOGGERS: "kafka.authorizer.logger=INFO"
+      KAFKA_LOG4J_ROOT_LOGLEVEL: INFO
+      KAFKA_BROKER_ID: 1
+      KAFKA_BROKER_RACK: "r1"
+      KAFKA_JMX_PORT: 9991
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+      SPARK_WORKER_WEBUI_PORT: 8081
+      SPARK_MASTER_HOST: 'master'
+      JAVA_HOME: '/usr/lib/jvm/zulu-8-amd64'
+
+  worker2:
+    image: kaspar-worker:1.0
+    hostname: worker2
+    container_name: worker2
+    cpus: 0.7
+    depends_on:
+      - zookeeper
+      - master
+    ports:
+      - 9092:9092
+      - 8082:8082
+    volumes:
+      - ./serviceConfig/spark-defaults.conf:/usr/local/spark/conf/spark-defaults.conf
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CLEAR:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: CLEAR
+      KAFKA_ADVERTISED_LISTENERS: CLEAR://worker2:9092
+      KAFKA_LOG4J_LOGGERS: "kafka.authorizer.logger=INFO"
+      KAFKA_LOG4J_ROOT_LOGLEVEL: INFO
+      KAFKA_BROKER_ID: 2
+      KAFKA_BROKER_RACK: "r1"
+      KAFKA_JMX_PORT: 9992
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+      SPARK_WORKER_WEBUI_PORT: 8082
+
+  worker3:
+    image: kaspar-worker:1.0
+    hostname: worker3
+    container_name: worker3
+    cpus: 0.7
+    depends_on:
+      - zookeeper
+      - master
+    ports:
+      - 9093:9093
+      - 8083:8083
+    volumes:
+      - ./serviceConfig/spark-defaults.conf:/usr/local/spark/conf/spark-defaults.conf
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CLEAR:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: CLEAR
+      KAFKA_ADVERTISED_LISTENERS: CLEAR://worker3:9093
+      KAFKA_LOG4J_LOGGERS: "kafka.authorizer.logger=INFO"
+      KAFKA_LOG4J_ROOT_LOGLEVEL: INFO
+      KAFKA_BROKER_ID: 3
+      KAFKA_BROKER_RACK: "r1"
+      KAFKA_JMX_PORT: 9993
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+      SPARK_WORKER_WEBUI_PORT: 8083
+
+  master:
+    image: kaspar-master:1.0
+    hostname: master
+    container_name: master
+    cpus: 0.7
+    ports:
+      - 8080:8080
+      - 7077:7077
+    volumes:
+      - ./serviceConfig/spark-defaults.conf:/usr/local/spark/conf/spark-defaults.conf
+      - ./demo:/home/ubuntu/demo
+      - ./bin:/home/ubuntu/bin
