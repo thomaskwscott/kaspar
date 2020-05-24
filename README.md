@@ -53,8 +53,8 @@ Demo source code can be found in the demo directory.
 
 The demo creates 2 kafka topics:
 
-testTopic - contains integers 1 to 100
-testTopic2 - contains integers 1 to 25
+* testTopic - contains integers 1 to 100
+* testTopic2 - contains integers 1 to 25
 
 Kaspar is then used to read the values from both of these topics and join them using SparkSQL. The output should be 2 
 columns both containing the numbers 1 to 25
