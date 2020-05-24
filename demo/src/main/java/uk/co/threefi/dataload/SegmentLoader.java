@@ -51,7 +51,7 @@ public class SegmentLoader implements Serializable {
     }
 
     JavaRDD<String> rawData = jsc.parallelize(Arrays.asList(taskAssigments.toArray(new String[taskAssigments.size()])))
-            .repartition(3)
+            .repartition(taskAssigments.size())
             .flatMap(i ->  {
               String expectedBrokerId = i.split(":")[0];
               String[] brokerHostedPartitions = i.split(":")[1].split(",");
