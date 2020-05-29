@@ -1,5 +1,5 @@
 /usr/local/spark/bin/spark-shell --master "spark://master:7077" \
---num-executors 3 \
+--num-executors 9 \
 --executor-cores 1 \
 --conf "spark.blacklist.enabled=true" \
 --conf "spark.blacklist.killBlacklistedExecutors=false" \

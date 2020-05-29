@@ -10,6 +10,8 @@ over the network.
 
 ## How it works
 
+### Assembling the data
+
 Nodes with Spark Workers and Kafka brokers should be deployed with a separate Spark Master:
 
 ```
@@ -38,6 +40,46 @@ The data load process:
  dumpLogSegments command) and return a RDD containing the message values.
  4. From here on in Spark can do the rest, possibly  adding a schema and running SparkSQL?   
 
+### Creating rows from messages:
+
+Messages are converted to RawRow (uk.co.threefi.dataload.structure.RawRow) objects which wrap an array of strings (1 
+string per column) representing a row. This conversion happens during the read from disk process. This is done using 
+a Columnifier (uk.co.threefi.dataload.structure.Columnifier). The only implementation of this available right now is the 
+CSVColumnifier which splits the messages on a delimiter. 
+
+The RawRows must then be converted into SparkSQL Row format using a conversion function such as the one below:
+
+```
+val transactionConversionFunc = new org.apache.spark.api.java.function.Function[RawRow, Row] {
+  final val serialVersionUID = -812004521983071103L
+  override def call(rawRow: RawRow) : Row = RowFactory.create(
+    Integer.valueOf(rawRow.getColumnVal(0)),
+    Integer.valueOf(rawRow.getColumnVal(1))
+  )
+}
+```
+
+It is here that column types should be applied. 
+
+Next we define a schema to apply to to our set of rows:
+
+```
+val transactionCols = Array(
+  new StructField("customerId", DataTypes.IntegerType, false, Metadata.empty),
+  new StructField("itemId", DataTypes.IntegerType, false, Metadata.empty)
+)
+val transactionSchema = new StructType(transactionCols)
+```
+
+Note the types defined in the schema must match the underlying data.
+
+Finally we define a dataframe with table data and schema for use in sql queries:
+
+```
+val transactionDf = sqlContext.createDataFrame(transactionRows,transactionSchema)
+transactionDf.createOrReplaceTempView("Transactions")
+```
+
 ## Installing
  
 Build images with spark worker/confluent:
@@ -47,7 +89,7 @@ cd docker
 ./make-images.sh
 ```
 
-## Running the demo
+## Running the demo app
 
 Demo source code can be found in the demo directory.
 
@@ -66,22 +108,35 @@ cd /home/ubuntu/bin
 ./launchDemo.sh
 ```
 
-## Running Spark Shell
+## Running with Spark Shell
 
 Kaspar can also be used with Spark Shell:
 
 ```
 docker-compose exec master bash
 cd /home/ubuntu/bin
+./setup.sh
 ./launchShell.sh
 ```
 
-Some example code can be seen here:
+There is a far more interesting demo available in resources/spark-shell_example.scala. To run just copy the entirety of 
+this file and paste it into your Spark shell session
+
+This demo uses 3 underlying topics, Items, Customers and Transactions. Each of these topics contain row data e.g.
+ 
+```
+0,Bruce Wayne,Wayne Manor,36
+```
+
+You can see this raw data in the resources folder.
+
+The demo reads and established these 3 topics as Spark Dataframes before joining them using Spark SQL with the following query:
 
 ```
-    import io.confluent.dataload.SegmentLoader
-    val clientProps = new java.util.Properties
-    clientProps.setProperty("bootstrap.servers","worker1:9091")
-    val testRows = SegmentLoader.getRawRows(sc,"testTopic2",clientProps)
-    val collectedRows = testRows.collect()
+ select name,price
+ from Customers
+ join Transactions
+ on Customers.customerId = Transactions.customerId
+ join Items
+ on Items.itemId = Transactions.itemId
 ```

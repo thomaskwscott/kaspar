@@ -3,13 +3,18 @@ package uk.co.threefi.dataload;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
+import uk.co.threefi.dataload.structure.Columnifier;
+import uk.co.threefi.dataload.structure.CsvColumnifier;
+import uk.co.threefi.dataload.structure.RawRow;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -23,11 +28,7 @@ public class Main {
    */
 
   /* for spark-shell:
-    import io.confluent.dataload.SegmentLoader
-    val clientProps = new java.util.Properties
-    clientProps.setProperty("bootstrap.servers","worker1:9091")
-    val testRows = SegmentLoader.getRawRows(sc,"testTopic2",clientProps)
-    val collectedRows = testRows.collect()
+
    */
 
   public static void main(String[] args) throws IOException {
@@ -40,13 +41,26 @@ public class Main {
     clientProps.setProperty("bootstrap.servers", BOOTSTRAP_SERVER);
 
 
+    Columnifier csvColumnifier = new CsvColumnifier(",");
 
-    JavaRDD<Row> testTopicRows = SegmentLoader.getRows(SegmentLoader.getRawRows(jsc,"testTopic",clientProps));
-    JavaRDD<Row> testTopic2Rows = SegmentLoader.getRows(SegmentLoader.getRawRows(jsc,"testTopic2",clientProps));
+    JavaRDD<RawRow> testTopicRaw = SegmentLoader.getRawRows(jsc,"testTopic",clientProps,csvColumnifier);
+    JavaRDD<RawRow> testTopic2Raw = SegmentLoader.getRawRows(jsc,"testTopic2",clientProps,csvColumnifier);
+
+    JavaRDD<Row> testTopicRows = testTopicRaw.map(new Function<RawRow, Row>() {
+      private static final long serialVersionUID = -812004521983071103L;
+      public Row call(RawRow rawRow) {
+        return RowFactory.create(Integer.valueOf(rawRow.getColumnVal(0)));
+      }});
+
+    JavaRDD<Row> testTopic2Rows = testTopic2Raw.map(new Function<RawRow, Row>() {
+      private static final long serialVersionUID = -812004521983071103L;
+      public Row call(RawRow rawRow) {
+        return RowFactory.create(Integer.valueOf(rawRow.getColumnVal(0)));
+      }});
 
     SQLContext sqlContext = new SQLContext(jsc);
     StructType schema = new StructType(new StructField[]{
-            new StructField("col_int", DataTypes.IntegerType, false, Metadata.empty()),
+            new StructField("col_int", DataTypes.Intger, false, Metadata.empty()),
     });
 
     Dataset<Row> testTopicDf = sqlContext.createDataFrame(testTopicRows,schema);

@@ -15,6 +15,8 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
+import uk.co.threefi.dataload.structure.Columnifier;
+import uk.co.threefi.dataload.structure.RawRow;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,7 +30,7 @@ public class SegmentLoader implements Serializable {
   private static final String LOG_DIR="/var/lib/kafka/data";
 
 
-  public static JavaRDD<String> getRawRows(JavaSparkContext jsc, String topicName,Properties clientProps) {
+  public static JavaRDD<RawRow> getRawRows(JavaSparkContext jsc, String topicName,Properties clientProps,Columnifier columnifier) {
     AdminClient adminClient = AdminClient.create(clientProps);
 
     List<String> taskAssigments = new ArrayList<>();
@@ -50,7 +52,7 @@ public class SegmentLoader implements Serializable {
       System.out.println("bad thing happened");
     }
 
-    JavaRDD<String> rawData = jsc.parallelize(Arrays.asList(taskAssigments.toArray(new String[taskAssigments.size()])))
+    JavaRDD<RawRow> rawData = jsc.parallelize(Arrays.asList(taskAssigments.toArray(new String[taskAssigments.size()])))
             .repartition(taskAssigments.size())
             .flatMap(i ->  {
               String expectedBrokerId = i.split(":")[0];
@@ -61,19 +63,10 @@ public class SegmentLoader implements Serializable {
                         expectedBrokerId + " actual: " + actualbrokerId + ". \n" +
                         "You should have blacklisting configurations that mean this will be rescheduled on a different node\n");
               }
-              return getFileRecords(topicName,brokerHostedPartitions).iterator();
+              return getFileRecords(topicName,brokerHostedPartitions,columnifier).iterator();
             });
 
     return rawData;
-  }
-
-  public static JavaRDD<Row> getRows(JavaRDD<String> rawData) {
-    JavaRDD<Row> rows = rawData.map(new Function<String, Row>() {
-      private static final long serialVersionUID = -812004521983071103L;
-      public Row call(String rawData) {
-        return RowFactory.create(Integer.valueOf(rawData));
-      }});
-    return rows;
   }
 
   private static String getBrokerId() {
@@ -86,8 +79,8 @@ public class SegmentLoader implements Serializable {
     return props.getProperty("broker.id");
   }
 
-  private static List<String> getFileRecords(String topicName,String[] partitions) throws IOException {
-    List<String> vals = new ArrayList<>();
+  private static List<RawRow> getFileRecords(String topicName, String[] partitions, Columnifier columnifier) throws IOException {
+    List<RawRow> vals = new ArrayList<>();
     List<File> segmentsToRead = new ArrayList<>();
 
     for (String partition : partitions) {
@@ -101,7 +94,9 @@ public class SegmentLoader implements Serializable {
       Decoder<String> decoder = new StringDecoder(new VerifiableProperties());
       for (FileLogInputStream.FileChannelRecordBatch batch : records.batches()) {
         for (Record record : batch) {
-          vals.add(decoder.fromBytes(Utils.readBytes(record.value())));
+          RawRow newRow = new RawRow();
+          newRow.setRawVals(columnifier.toColumns(decoder.fromBytes(Utils.readBytes(record.value()))));
+          vals.add(newRow);
         }
       }
     }

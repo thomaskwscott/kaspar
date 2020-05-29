@@ -107,3 +107,4 @@ services:
       - ./serviceConfig/spark-defaults.conf:/usr/local/spark/conf/spark-defaults.conf
       - ./demo:/home/ubuntu/demo
       - ./bin:/home/ubuntu/bin
+      - ./resources:/home/ubuntu/resources
