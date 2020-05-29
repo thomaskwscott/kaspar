@@ -80,6 +80,21 @@ val transactionDf = sqlContext.createDataFrame(transactionRows,transactionSchema
 transactionDf.createOrReplaceTempView("Transactions")
 ```
 
+### Pushing Predicates down
+
+One of the advantages of this approach is that we can remove messages that are not required for the query at the read 
+stage so that they never go across the network or through a broker request pipeline. Kaspar allows you to define 
+Predicates that are pushed down and apply to the RawRow object values read from disk. These are standard Scala 
+functions e.g.:
+
+```
+toJavaPredicate((rawRow: RawRow) => rawRow.getColumnVal(1).startsWith("B")))
+```
+
+Any number of these can be applied as varargs to SegmentLoader.getRawRows(). An example of this can be seen on line 30 
+of spark-shell_example.scala where a predicate is applied to reduce the Customers dataframe to only customers whose 
+names start with the letter "B" 
+
 ## Installing
  
 Build images with spark worker/confluent:

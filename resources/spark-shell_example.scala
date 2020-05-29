@@ -1,24 +1,34 @@
 
 import collection.JavaConverters._
+import org.apache.spark.sql.Dataset
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.RowFactory
+import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.types.DataTypes
+import org.apache.spark.sql.types.Metadata
+import org.apache.spark.sql.types.StructField
+import org.apache.spark.sql.types.StructType
+
+import java.io.Serializable
+import java.util.function.{Predicate => JPredicate}
+
 import uk.co.threefi.dataload.SegmentLoader
 import uk.co.threefi.dataload.structure.Columnifier
 import uk.co.threefi.dataload.structure.CsvColumnifier
 import uk.co.threefi.dataload.structure.RawRow
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.RowFactory;
-import org.apache.spark.sql.SQLContext;
-import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.Metadata;
-import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
-import java.util.function.Function;
+
+
+implicit def toJavaPredicate[A](f: Function1[A, Boolean]): JPredicate[A] with java.io.Serializable = new JPredicate[A] with Serializable {
+  final val serialVersionUID = -812004521983071103L
+  override def test(a: A): Boolean = f(a)
+}
 
 val clientProps = new java.util.Properties
 clientProps.setProperty("bootstrap.servers","worker1:9091")
 val csvColumnifier = new CsvColumnifier(",");
 
-val customerRawRows = SegmentLoader.getRawRows(sc,"Customers",clientProps,csvColumnifier);
+val customerRawRows = SegmentLoader.getRawRows(sc,"Customers",clientProps,csvColumnifier,
+  toJavaPredicate((rawRow: RawRow) => rawRow.getColumnVal(1).startsWith("B")))
 val customerConversionFunc = new org.apache.spark.api.java.function.Function[RawRow, Row] {
   final val serialVersionUID = -812004521983071103L
   override def call(rawRow: RawRow) : Row = RowFactory.create(

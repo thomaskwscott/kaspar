@@ -60,7 +60,7 @@ public class Main {
 
     SQLContext sqlContext = new SQLContext(jsc);
     StructType schema = new StructType(new StructField[]{
-            new StructField("col_int", DataTypes.Intger, false, Metadata.empty()),
+            new StructField("col_int", DataTypes.IntegerType, false, Metadata.empty()),
     });
 
     Dataset<Row> testTopicDf = sqlContext.createDataFrame(testTopicRows,schema);

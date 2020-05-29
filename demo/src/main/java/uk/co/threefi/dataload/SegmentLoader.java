@@ -23,6 +23,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class SegmentLoader implements Serializable {
@@ -30,7 +31,7 @@ public class SegmentLoader implements Serializable {
   private static final String LOG_DIR="/var/lib/kafka/data";
 
 
-  public static JavaRDD<RawRow> getRawRows(JavaSparkContext jsc, String topicName,Properties clientProps,Columnifier columnifier) {
+  public static JavaRDD<RawRow> getRawRows(JavaSparkContext jsc, String topicName,Properties clientProps,Columnifier columnifier,Predicate<RawRow>... predicates) {
     AdminClient adminClient = AdminClient.create(clientProps);
 
     List<String> taskAssigments = new ArrayList<>();
@@ -63,7 +64,7 @@ public class SegmentLoader implements Serializable {
                         expectedBrokerId + " actual: " + actualbrokerId + ". \n" +
                         "You should have blacklisting configurations that mean this will be rescheduled on a different node\n");
               }
-              return getFileRecords(topicName,brokerHostedPartitions,columnifier).iterator();
+              return getFileRecords(topicName,brokerHostedPartitions,columnifier,predicates).iterator();
             });
 
     return rawData;
@@ -79,7 +80,7 @@ public class SegmentLoader implements Serializable {
     return props.getProperty("broker.id");
   }
 
-  private static List<RawRow> getFileRecords(String topicName, String[] partitions, Columnifier columnifier) throws IOException {
+  private static List<RawRow> getFileRecords(String topicName, String[] partitions, Columnifier columnifier, Predicate<RawRow>[] predicates) throws IOException {
     List<RawRow> vals = new ArrayList<>();
     List<File> segmentsToRead = new ArrayList<>();
 
@@ -96,7 +97,13 @@ public class SegmentLoader implements Serializable {
         for (Record record : batch) {
           RawRow newRow = new RawRow();
           newRow.setRawVals(columnifier.toColumns(decoder.fromBytes(Utils.readBytes(record.value()))));
-          vals.add(newRow);
+          boolean shouldAdd = true;
+          for(Predicate<RawRow> predicate:predicates) {
+            shouldAdd = shouldAdd && predicate.test(newRow);
+          }
+          if(shouldAdd) {
+            vals.add(newRow);
+          }
         }
       }
     }
