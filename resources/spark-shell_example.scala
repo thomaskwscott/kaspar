@@ -28,18 +28,22 @@ clientProps.setProperty("bootstrap.servers","worker1:9091")
 val csvColumnifier = new CsvColumnifier(",");
 
 val customerRawRows = SegmentLoader.getRawRows(sc,"Customers",clientProps,csvColumnifier,
-  toJavaPredicate((rawRow: RawRow) => rawRow.getColumnVal(1).startsWith("B")))
+  toJavaPredicate((rawRow: RawRow) => rawRow.getColumnVal(3).startsWith("B")))
 val customerConversionFunc = new org.apache.spark.api.java.function.Function[RawRow, Row] {
   final val serialVersionUID = -812004521983071103L
   override def call(rawRow: RawRow) : Row = RowFactory.create(
-    Integer.valueOf(rawRow.getColumnVal(0)),
+    rawRow.getColumnVal(0),
     rawRow.getColumnVal(1),
-    rawRow.getColumnVal(2),
-    Integer.valueOf(rawRow.getColumnVal(3))
+    Integer.valueOf(rawRow.getColumnVal(2)),
+    rawRow.getColumnVal(3),
+    rawRow.getColumnVal(4),
+    Integer.valueOf(rawRow.getColumnVal(5))
   )
 }
 val customerRows = customerRawRows.map(customerConversionFunc)
 val customerCols = Array(
+  new StructField("offset", DataTypes.StringType, false, Metadata.empty),
+  new StructField("timestamp", DataTypes.StringType, false, Metadata.empty),
   new StructField("customerId", DataTypes.IntegerType, false, Metadata.empty),
   new StructField("name", DataTypes.StringType, false, Metadata.empty),
   new StructField("address", DataTypes.StringType, false, Metadata.empty),
@@ -52,12 +56,16 @@ val transactionRawRows = SegmentLoader.getRawRows(sc,"Transactions",clientProps,
 val transactionConversionFunc = new org.apache.spark.api.java.function.Function[RawRow, Row] {
   final val serialVersionUID = -812004521983071103L
   override def call(rawRow: RawRow) : Row = RowFactory.create(
-    Integer.valueOf(rawRow.getColumnVal(0)),
-    Integer.valueOf(rawRow.getColumnVal(1))
+    rawRow.getColumnVal(0),
+    rawRow.getColumnVal(1),
+    Integer.valueOf(rawRow.getColumnVal(2)),
+    Integer.valueOf(rawRow.getColumnVal(3))
   )
 }
 val transactionRows = transactionRawRows.map(transactionConversionFunc)
 val transactionCols = Array(
+  new StructField("offset", DataTypes.StringType, false, Metadata.empty),
+  new StructField("timestamp", DataTypes.StringType, false, Metadata.empty),
   new StructField("customerId", DataTypes.IntegerType, false, Metadata.empty),
   new StructField("itemId", DataTypes.IntegerType, false, Metadata.empty)
 )
@@ -68,13 +76,17 @@ val itemRawRows = SegmentLoader.getRawRows(sc,"Items",clientProps,csvColumnifier
 val itemConversionFunc = new org.apache.spark.api.java.function.Function[RawRow, Row] {
   final val serialVersionUID = -812004521983071103L
   override def call(rawRow: RawRow) : Row = RowFactory.create(
-    Integer.valueOf(rawRow.getColumnVal(0)),
+    rawRow.getColumnVal(0),
     rawRow.getColumnVal(1),
-    java.lang.Double.valueOf(rawRow.getColumnVal(2))
+    Integer.valueOf(rawRow.getColumnVal(2)),
+    rawRow.getColumnVal(3),
+    java.lang.Double.valueOf(rawRow.getColumnVal(4))
   )
 }
 val itemRows = itemRawRows.map(itemConversionFunc)
 val itemCols = Array(
+  new StructField("offset", DataTypes.StringType, false, Metadata.empty),
+  new StructField("timestamp", DataTypes.StringType, false, Metadata.empty),
   new StructField("itemId", DataTypes.IntegerType, false, Metadata.empty),
   new StructField("description", DataTypes.StringType, false, Metadata.empty),
   new StructField("price", DataTypes.DoubleType, false, Metadata.empty)

@@ -45,7 +45,8 @@ The data load process:
 Messages are converted to RawRow (uk.co.threefi.dataload.structure.RawRow) objects which wrap an array of strings (1 
 string per column) representing a row. This conversion happens during the read from disk process. This is done using 
 a Columnifier (uk.co.threefi.dataload.structure.Columnifier). The only implementation of this available right now is the 
-CSVColumnifier which splits the messages on a delimiter. 
+CSVColumnifier which splits the messages on a delimiter. The first 2 columns (rawRow.getColumnVal(0) and 
+rawRow.getColumnVal(1)) are currently reserved for offset and timestamps of the message. 
 
 The RawRows must then be converted into SparkSQL Row format using a conversion function such as the one below:
 
@@ -53,8 +54,8 @@ The RawRows must then be converted into SparkSQL Row format using a conversion f
 val transactionConversionFunc = new org.apache.spark.api.java.function.Function[RawRow, Row] {
   final val serialVersionUID = -812004521983071103L
   override def call(rawRow: RawRow) : Row = RowFactory.create(
-    Integer.valueOf(rawRow.getColumnVal(0)),
-    Integer.valueOf(rawRow.getColumnVal(1))
+    Integer.valueOf(rawRow.getColumnVal(2)),
+    Integer.valueOf(rawRow.getColumnVal(3))
   )
 }
 ```

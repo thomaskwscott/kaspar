@@ -96,7 +96,8 @@ public class SegmentLoader implements Serializable {
       for (FileLogInputStream.FileChannelRecordBatch batch : records.batches()) {
         for (Record record : batch) {
           RawRow newRow = new RawRow();
-          newRow.setRawVals(columnifier.toColumns(decoder.fromBytes(Utils.readBytes(record.value()))));
+          String rawValue = record.offset() + "," + record.timestamp() + "," + decoder.fromBytes(Utils.readBytes(record.value()));
+          newRow.setRawVals(columnifier.toColumns(rawValue));
           boolean shouldAdd = true;
           for(Predicate<RawRow> predicate:predicates) {
             shouldAdd = shouldAdd && predicate.test(newRow);

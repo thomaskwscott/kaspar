@@ -49,13 +49,13 @@ public class Main {
     JavaRDD<Row> testTopicRows = testTopicRaw.map(new Function<RawRow, Row>() {
       private static final long serialVersionUID = -812004521983071103L;
       public Row call(RawRow rawRow) {
-        return RowFactory.create(Integer.valueOf(rawRow.getColumnVal(0)));
+        return RowFactory.create(Integer.valueOf(rawRow.getColumnVal(2)));
       }});
 
     JavaRDD<Row> testTopic2Rows = testTopic2Raw.map(new Function<RawRow, Row>() {
       private static final long serialVersionUID = -812004521983071103L;
       public Row call(RawRow rawRow) {
-        return RowFactory.create(Integer.valueOf(rawRow.getColumnVal(0)));
+        return RowFactory.create(Integer.valueOf(rawRow.getColumnVal(2)));
       }});
 
     SQLContext sqlContext = new SQLContext(jsc);
