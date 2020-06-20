@@ -7,3 +7,4 @@
 /bin/metastore_db/
 /demo/.idea/
 /demo/*.iml
+/demo/dependency-reduced-pom.xml

@@ -9,4 +9,3 @@ kafka-topics --bootstrap-server worker1:9091 --create --topic Items --replicatio
 kafka-console-producer --broker-list worker1:9091 --topic Customers < /home/ubuntu/resources/Customers.csv
 kafka-console-producer --broker-list worker1:9091 --topic Transactions < /home/ubuntu/resources/Transactions.csv
 kafka-console-producer --broker-list worker1:9091 --topic Items < /home/ubuntu/resources/Items.csv
-
