@@ -42,22 +42,21 @@ The data load process:
 
 ### Creating rows from messages:
 
-Messages are converted to RawRow (uk.co.threefi.dataload.structure.RawRow) objects which wrap an array of strings (1 
+Messages are converted to RawRow (kaspar.dataload.structure.RawRow) objects which wrap an array of strings (1 
 string per column) representing a row. This conversion happens during the read from disk process. This is done using 
-a Columnifier (uk.co.threefi.dataload.structure.Columnifier). The only implementation of this available right now is the 
+a Columnifier (kaspar.dataload.structure.Columnifier). The only implementation of this available right now is the 
 CSVColumnifier which splits the messages on a delimiter. The first 2 columns (rawRow.getColumnVal(0) and 
 rawRow.getColumnVal(1)) are currently reserved for offset and timestamps of the message. 
 
 The RawRows must then be converted into SparkSQL Row format using a conversion function such as the one below:
 
 ```
-val transactionConversionFunc = new org.apache.spark.api.java.function.Function[RawRow, Row] {
-  final val serialVersionUID = -812004521983071103L
-  override def call(rawRow: RawRow) : Row = RowFactory.create(
-    Integer.valueOf(rawRow.getColumnVal(2)),
-    Integer.valueOf(rawRow.getColumnVal(3))
-  )
-}
+val transactionRows = transactionRawRows.map(rawRow => RowFactory.create(
+  rawRow.getColumnVal(0),
+  rawRow.getColumnVal(1),
+  Integer.valueOf(rawRow.getColumnVal(2)),
+  Integer.valueOf(rawRow.getColumnVal(3))
+))
 ```
 
 It is here that column types should be applied. 
@@ -66,6 +65,8 @@ Next we define a schema to apply to to our set of rows:
 
 ```
 val transactionCols = Array(
+  new StructField("offset", DataTypes.StringType, false, Metadata.empty),
+  new StructField("timestamp", DataTypes.StringType, false, Metadata.empty),
   new StructField("customerId", DataTypes.IntegerType, false, Metadata.empty),
   new StructField("itemId", DataTypes.IntegerType, false, Metadata.empty)
 )
@@ -89,10 +90,11 @@ Predicates that are pushed down and apply to the RawRow object values read from 
 functions e.g.:
 
 ```
-toJavaPredicate((rawRow: RawRow) => rawRow.getColumnVal(1).startsWith("B")))
+val customerRawRows = TopicLoader.getRawRows(sc,"Customers",clientProps,csvColumnifier,
+  (rawRow: RawRow) => rawRow.getColumnVal(3).startsWith("B"))
 ```
 
-Any number of these can be applied as varargs to SegmentLoader.getRawRows(). An example of this can be seen on line 30 
+Any number of these can be applied as varargs to TopicLoader.getRawRows(). An example of this can be seen on line 21 
 of spark-shell_example.scala where a predicate is applied to reduce the Customers dataframe to only customers whose 
 names start with the letter "B" 
 
@@ -105,28 +107,9 @@ cd docker
 ./make-images.sh
 ```
 
-## Running the demo app
-
-Demo source code can be found in the demo directory.
-
-The demo creates 2 kafka topics:
-
-* testTopic - contains integers 1 to 100
-* testTopic2 - contains integers 1 to 25
-
-Kaspar is then used to read the values from both of these topics and join them using SparkSQL. The output should be 2 
-columns both containing the numbers 1 to 25
-
-```
-docker-compose exec master bash
-cd /home/ubuntu/bin
-./setup.sh
-./launchDemo.sh
-```
-
 ## Running with Spark Shell
 
-Kaspar can also be used with Spark Shell:
+Kaspar can be used with Spark Shell:
 
 ```
 docker-compose exec master bash

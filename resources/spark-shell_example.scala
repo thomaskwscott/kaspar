@@ -17,9 +17,9 @@ val clientProps = new java.util.Properties
 clientProps.setProperty("bootstrap.servers","worker1:9091")
 val csvColumnifier = new CsvColumnifier(",");
 
-val customerRawRows = TopicLoader.getRawRows(sc,"Customers",clientProps,csvColumnifier)
-//val customerRawRows = TopicLoader.getRawRows(sc,"Customers",clientProps,csvColumnifier,
-//  Array((rawRow: RawRow) => rawRow.getColumnVal(3).startsWith("B")))
+//val customerRawRows = TopicLoader.getRawRows(sc,"Customers",clientProps,csvColumnifier)
+val customerRawRows = TopicLoader.getRawRows(sc,"Customers",clientProps,csvColumnifier,
+  (rawRow: RawRow) => rawRow.getColumnVal(3).startsWith("B"))
 
 val customerRows = customerRawRows.map(rawRow => RowFactory.create(
   rawRow.getColumnVal(0),
