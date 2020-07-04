@@ -1,4 +1,3 @@
-
 import collection.JavaConverters._
 import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.Row
@@ -15,11 +14,14 @@ import kaspar.dataload.structure.RawRow
 
 val clientProps = new java.util.Properties
 clientProps.setProperty("bootstrap.servers","worker1:9091")
-val csvColumnifier = new CsvColumnifier(",");
+val csvColumnifier = new CsvColumnifier(",")
 
-//val customerRawRows = TopicLoader.getRawRows(sc,"Customers",clientProps,csvColumnifier)
-val customerRawRows = TopicLoader.getRawRows(sc,"Customers",clientProps,csvColumnifier,
+val dataDir = "/var/lib/kafka/data"
+val serverProperties = "/etc/kafka/kafka.properties"
+
+val customerRawRows = TopicLoader.getRawRows(sc,dataDir,serverProperties,"Customers",clientProps,csvColumnifier,
   (rawRow: RawRow) => rawRow.getColumnVal(3).startsWith("B"))
+customerRawRows.persist
 
 val customerRows = customerRawRows.map(rawRow => RowFactory.create(
   rawRow.getColumnVal(0),
@@ -41,13 +43,16 @@ val customerCols = Array(
 val customerSchema = new StructType(customerCols)
 
 
-val transactionRawRows = TopicLoader.getRawRows(sc,"Transactions",clientProps,csvColumnifier)
+val transactionRawRows = TopicLoader.getRawRows(sc,dataDir,serverProperties,"Transactions",clientProps,csvColumnifier)
+transactionRawRows.persist
+
 val transactionRows = transactionRawRows.map(rawRow => RowFactory.create(
   rawRow.getColumnVal(0),
   rawRow.getColumnVal(1),
   Integer.valueOf(rawRow.getColumnVal(2)),
   Integer.valueOf(rawRow.getColumnVal(3))
 ))
+
 val transactionCols = Array(
   new StructField("offset", DataTypes.StringType, false, Metadata.empty),
   new StructField("timestamp", DataTypes.StringType, false, Metadata.empty),
@@ -56,8 +61,9 @@ val transactionCols = Array(
 )
 val transactionSchema = new StructType(transactionCols)
 
+val itemRawRows = TopicLoader.getRawRows(sc,dataDir,serverProperties,"Items",clientProps,csvColumnifier)
+itemRawRows.persist
 
-val itemRawRows = TopicLoader.getRawRows(sc,"Items",clientProps,csvColumnifier)
 val itemRows = itemRawRows.map(rawRow =>   RowFactory.create(
   rawRow.getColumnVal(0),
   rawRow.getColumnVal(1),
@@ -65,6 +71,7 @@ val itemRows = itemRawRows.map(rawRow =>   RowFactory.create(
   rawRow.getColumnVal(3),
   java.lang.Double.valueOf(rawRow.getColumnVal(4))
 ))
+
 val itemCols = Array(
   new StructField("offset", DataTypes.StringType, false, Metadata.empty),
   new StructField("timestamp", DataTypes.StringType, false, Metadata.empty),
@@ -74,6 +81,7 @@ val itemCols = Array(
 )
 val itemSchema = new StructType(itemCols)
 
+// run some sql
 
 val sqlContext = new SQLContext(sc)
 

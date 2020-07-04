@@ -22,9 +22,20 @@ import kaspar.dataload.structure.Columnifier
 
 object TopicLoader {
 
-  private val LOG_DIR = "/var/lib/kafka/data"
+  var dataDir = "/var/lib/kafka/data"
+  var serverPropertiesLocation = "/etc/kafka/kafka.properties"
 
-  def getRawRows(sc: SparkContext, topicName: String, clientProps: Properties, columnifier: Columnifier, predicates: (RawRow)=> Boolean*): RDD[RawRow] = {
+  def setDataDir(dataDir: String): Unit = {
+    this.dataDir = dataDir
+  }
+
+  def setServerProperties(serverPropertiesLocation: String): Unit = {
+    this.serverPropertiesLocation = serverPropertiesLocation
+  }
+
+  def getRawRows(sc: SparkContext, dataDir: String, serverProperties: String, topicName: String, clientProps: Properties, columnifier: Columnifier, predicates: (RawRow)=> Boolean*): RDD[RawRow] = {
+    setDataDir(dataDir)
+    setServerProperties(serverProperties)
     val adminClient: AdminClient = AdminClient.create(clientProps)
 
     val idHostnameMappings = getIdHostnameMappings(adminClient)
@@ -52,7 +63,7 @@ object TopicLoader {
         System.out.println("bad thing happened")
     }
 
-    val rawData: RDD[RawRow] = sc.makeRDD(taskAssigments).repartition(taskAssigments.size).flatMap((i: String) => {
+    val rawData: RDD[RawRow] = sc.makeRDD(taskAssigments).flatMap((i: String) => {
         val expectedBrokerId: String = i.split(":")(0)
         val brokerHostedPartitions: Array[String] = i.split(":")(1).split(",")
         val actualbrokerId: String = getBrokerId
@@ -64,7 +75,7 @@ object TopicLoader {
 
   private def getBrokerId():String = {
     val props = new Properties
-    try props.load(new FileInputStream("/etc/kafka/kafka.properties"))
+    try props.load(new FileInputStream(serverPropertiesLocation))
     props.getProperty("broker.id")
   }
 
@@ -76,7 +87,7 @@ object TopicLoader {
   @throws[IOException]
   private def getFileRecords(topicName: String, partitions: Seq[String], columnifier: Columnifier, predicates: Seq[RawRow => Boolean]): Seq[RawRow] = {
     partitions.flatMap(partition => {
-      val partitionFiles = new File(LOG_DIR + "/" + topicName + "-" + partition).listFiles(
+      val partitionFiles = new File(dataDir + "/" + topicName + "-" + partition).listFiles(
         new FilenameFilter {
           override def accept(file: File, s: String): Boolean = s.toLowerCase().endsWith(".log")
         }

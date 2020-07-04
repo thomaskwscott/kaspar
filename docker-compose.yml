@@ -102,6 +102,7 @@ services:
     cpus: 0.7
     ports:
       - 8080:8080
+      - 4040:4040
       - 7077:7077
     volumes:
       - ./serviceConfig/spark-defaults.conf:/usr/local/spark/conf/spark-defaults.conf
