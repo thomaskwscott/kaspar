@@ -41,8 +41,10 @@ val serverProperties = "/etc/kafka/kafka.properties"
  this version of the customer row loader uses a row predicate to include only customer whose name starts with 'B'.
  As this is a row predicate all segments will be scanned and filtered.
  */
-val customerRawRows = TopicLoader.getRawRows(sc,dataDir,serverProperties,"Customers",clientProps,csvColumnifier,
-  rowPredicates = Array((rawRow: RawRow) => rawRow.getColumnVal(3).startsWith("B")))
+//val customerRawRows = TopicLoader.getRawRows(sc,dataDir,serverProperties,"Customers",clientProps,csvColumnifier,
+//  rowPredicates = Array((rawRow: RawRow) => rawRow.getColumnVal(3).startsWith("B")))
+
+val customerRawRows = TopicLoader.getRawRows(sc,dataDir,serverProperties,"Customers",clientProps,csvColumnifier)
 
 customerRawRows.persist
 
@@ -105,14 +107,13 @@ val itemCols = Array(
 val itemSchema = new StructType(itemCols)
 
 // run some sql
-
 val sqlContext = new SQLContext(sc)
-
-val transactionDf = sqlContext.createDataFrame(transactionRows,transactionSchema)
-transactionDf.createOrReplaceTempView("Transactions")
 
 val customerDf = sqlContext.createDataFrame(customerRows,customerSchema)
 customerDf.createOrReplaceTempView("Customers")
+
+val transactionDf = sqlContext.createDataFrame(transactionRows,transactionSchema)
+transactionDf.createOrReplaceTempView("Transactions")
 
 val itemDf = sqlContext.createDataFrame(itemRows,itemSchema)
 itemDf.createOrReplaceTempView("Items")

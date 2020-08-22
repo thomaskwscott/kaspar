@@ -112,7 +112,7 @@ object TopicLoader {
           records.batches.flatMap(batch => {
             batch.map(record => {
               val newRow: RawRow = new RawRow()
-              val rawValue: String = record.offset + "," + record.timestamp + "," +
+              val rawValue: String = partition + "-" + record.offset + "," + record.timestamp + "," +
                 decoder.fromBytes(Utils.readBytes(record.value))
               newRow.setRawVals(columnifier.toColumns(rawValue))
               newRow
