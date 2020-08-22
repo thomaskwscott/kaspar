@@ -86,17 +86,31 @@ transactionDf.createOrReplaceTempView("Transactions")
 
 One of the advantages of this approach is that we can remove messages that are not required for the query at the read 
 stage so that they never go across the network or through a broker request pipeline. Kaspar allows you to define 
-Predicates that are pushed down and apply to the RawRow object values read from disk. These are standard Scala 
+Row Predicates that are pushed down and apply to the RawRow object values read from disk. These are standard Scala 
 functions e.g.:
 
 ```
-val customerRawRows = TopicLoader.getRawRows(sc,"Customers",clientProps,csvColumnifier,
-  (rawRow: RawRow) => rawRow.getColumnVal(3).startsWith("B"))
+val customerRawRows = TopicLoader.getRawRows(sc,dataDir,serverProperties,"Customers",clientProps,csvColumnifier,
+  rowPredicates = Array((rawRow: RawRow) => rawRow.getColumnVal(3).startsWith("B")))
 ```
 
-Any number of these can be applied as varargs to TopicLoader.getRawRows(). An example of this can be seen on line 21 
-of spark-shell_example.scala where a predicate is applied to reduce the Customers dataframe to only customers whose 
-names start with the letter "B" 
+Any number of these can be applied in the rowPredicates arg to TopicLoader.getRawRows(). An example of this can be seen  
+in spark-shell_example.scala where a predicate is applied to reduce the Customers dataframe to only customers whose 
+names start with the letter "B"
+
+Kaspar also supports segment predicates. These are designed to use indexes created for the immutable segment files read 
+by Kaspar. These predicates are used to determine whether a segment will be read or ignored during query execution. An 
+example can be seen here:
+
+```
+val customerRawRows = TopicLoader.getRawRows(sc,dataDir,serverProperties,"Customers",clientProps,csvColumnifier,
+  segmentPredicates = Array(MinMaxPredicate.buildGreaterThanEqualSegmentPredicate(30,5)))
+```  
+
+Note: A segment predicate only determines whether or not a segment file should be read and does not filter the rows 
+inside the segment. For instance, the above reads an index that contains the max and min values for customer age in 
+the segments, if the segment contains at least 1 row with and age higher than 30 then the segment will be read. However
+if no row predicate is supplied this read will also include rows in the segment with age <= 30.
 
 ## Installing
  
@@ -112,6 +126,7 @@ cd docker
 Kaspar can be used with Spark Shell:
 
 ```
+docker-compose up -d
 docker-compose exec master bash
 cd /home/ubuntu/bin
 ./setup.sh
@@ -120,6 +135,12 @@ cd /home/ubuntu/bin
 
 There is a far more interesting demo available in resources/spark-shell_example.scala. To run just copy the entirety of 
 this file and paste it into your Spark shell session
+
+Note, if you wish to use segmentPredicates then create some simple indexes by running:
+
+```
+./make_index.sh
+```
 
 This demo uses 3 underlying topics, Items, Customers and Transactions. Each of these topics contain row data e.g.
  

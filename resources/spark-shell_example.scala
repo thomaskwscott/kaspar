@@ -11,6 +11,7 @@ import org.apache.spark.sql.types.StructType
 import kaspar.dataload.TopicLoader
 import kaspar.dataload.structure.CsvColumnifier
 import kaspar.dataload.structure.RawRow
+import kaspar.dataload.predicate.MinMaxPredicate
 
 val clientProps = new java.util.Properties
 clientProps.setProperty("bootstrap.servers","worker1:9091")
@@ -19,8 +20,30 @@ val csvColumnifier = new CsvColumnifier(",")
 val dataDir = "/var/lib/kafka/data"
 val serverProperties = "/etc/kafka/kafka.properties"
 
+
+/*
+ this version of the customer row loader uses a segment predicate to include only segments that contain customers with
+ ages >30. Not this is a segment predicate and do will not filter rows (i.e. you will still see rows with age <30 as
+ long as the segment contains at least 1 row with age >30
+ */
+//val customerRawRows = TopicLoader.getRawRows(sc,dataDir,serverProperties,"Customers",clientProps,csvColumnifier,
+//  segmentPredicates = Array(MinMaxPredicate.buildGreaterThanEqualSegmentPredicate(30,5)))
+
+/*
+ this version of the customer row loader uses a segment predicate to include only segments that contain customers with
+ ages >120. This should return no rows as none of the customers are that old. Important to note here is that, because
+ this is a segment predicate no segment files were actually read, only the indexes.
+ */
+//val customerRawRows = TopicLoader.getRawRows(sc,dataDir,serverProperties,"Customers",clientProps,csvColumnifier,
+//  segmentPredicates = Array(MinMaxPredicate.buildGreaterThanEqualSegmentPredicate(120,5)))
+
+/*
+ this version of the customer row loader uses a row predicate to include only customer whose name starts with 'B'.
+ As this is a row predicate all segments will be scanned and filtered.
+ */
 val customerRawRows = TopicLoader.getRawRows(sc,dataDir,serverProperties,"Customers",clientProps,csvColumnifier,
-  (rawRow: RawRow) => rawRow.getColumnVal(3).startsWith("B"))
+  rowPredicates = Array((rawRow: RawRow) => rawRow.getColumnVal(3).startsWith("B")))
+
 customerRawRows.persist
 
 val customerRows = customerRawRows.map(rawRow => RowFactory.create(

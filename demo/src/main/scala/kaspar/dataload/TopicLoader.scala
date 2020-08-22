@@ -33,7 +33,10 @@ object TopicLoader {
     this.serverPropertiesLocation = serverPropertiesLocation
   }
 
-  def getRawRows(sc: SparkContext, dataDir: String, serverProperties: String, topicName: String, clientProps: Properties, columnifier: Columnifier, predicates: (RawRow)=> Boolean*): RDD[RawRow] = {
+  def getRawRows(sc: SparkContext, dataDir: String, serverProperties: String, topicName: String,
+                 clientProps: Properties, columnifier: Columnifier,
+                 rowPredicates: Array[(RawRow)=> Boolean] = Array(),
+                 segmentPredicates: Array[(String) => Boolean] = Array()) : RDD[RawRow] = {
     setDataDir(dataDir)
     setServerProperties(serverProperties)
     val adminClient: AdminClient = AdminClient.create(clientProps)
@@ -67,8 +70,10 @@ object TopicLoader {
         val expectedBrokerId: String = i.split(":")(0)
         val brokerHostedPartitions: Array[String] = i.split(":")(1).split(",")
         val actualbrokerId: String = getBrokerId
-        if (!(expectedBrokerId == actualbrokerId)) throw new RuntimeException("Ignore this, Spark scheduled this task on the wrong broker. Expected: " + expectedBrokerId + " actual: " + actualbrokerId + ". \n" + "You should have blacklisting configurations that mean this will be rescheduled on a different node\n")
-        getFileRecords(topicName, brokerHostedPartitions, columnifier, predicates).iterator
+        if (!(expectedBrokerId == actualbrokerId)) throw new RuntimeException("Ignore this, Spark scheduled this task " +
+          "on the wrong broker. Expected: " + expectedBrokerId + " actual: " + actualbrokerId + ". \n" + "You should " +
+          "have blacklisting configurations that mean this will be rescheduled on a different node\n")
+        getFileRecords(topicName, brokerHostedPartitions, columnifier, rowPredicates, segmentPredicates).iterator
     })
     rawData
   }
@@ -85,7 +90,9 @@ object TopicLoader {
   }
 
   @throws[IOException]
-  private def getFileRecords(topicName: String, partitions: Seq[String], columnifier: Columnifier, predicates: Seq[RawRow => Boolean]): Seq[RawRow] = {
+  private def getFileRecords(topicName: String, partitions: Seq[String], columnifier: Columnifier,
+                             rowPredicates: Seq[RawRow => Boolean],
+                             segmentPredicates: Seq[String => Boolean]): Seq[RawRow] = {
     partitions.flatMap(partition => {
       val partitionFiles = new File(dataDir + "/" + topicName + "-" + partition).listFiles(
         new FilenameFilter {
@@ -93,21 +100,31 @@ object TopicLoader {
         }
       )
       partitionFiles.flatMap(segmentFile => {
-        val records: FileRecords = FileRecords.open(segmentFile)
-        val decoder: Decoder[String] = new StringDecoder(new VerifiableProperties)
 
-        records.batches.flatMap(batch => {
-          batch.map(record => {
-            val newRow: RawRow = new RawRow()
-            val rawValue: String = record.offset + "," + record.timestamp + "," + decoder.fromBytes(Utils.readBytes(record.value))
-            newRow.setRawVals(columnifier.toColumns(rawValue))
-            newRow
-          }).filter(newRow => {
-            predicates.forall(predicate => {
-              predicate(newRow)
+        // check for segment predicate
+        if(segmentPredicates.forall(predicate =>
+          predicate(segmentFile.getPath())
+        )) {
+
+          val records: FileRecords = FileRecords.open(segmentFile)
+          val decoder: Decoder[String] = new StringDecoder(new VerifiableProperties)
+
+          records.batches.flatMap(batch => {
+            batch.map(record => {
+              val newRow: RawRow = new RawRow()
+              val rawValue: String = record.offset + "," + record.timestamp + "," +
+                decoder.fromBytes(Utils.readBytes(record.value))
+              newRow.setRawVals(columnifier.toColumns(rawValue))
+              newRow
+            }).filter(newRow => {
+              rowPredicates.forall(predicate => {
+                predicate(newRow)
+              })
             })
           })
-        })
+        } else {
+          Array[RawRow]()
+        }
       })
     })
   }
