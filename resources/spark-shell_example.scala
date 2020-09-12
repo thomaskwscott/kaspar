@@ -27,7 +27,7 @@ val serverProperties = "/etc/kafka/kafka.properties"
  long as the segment contains at least 1 row with age >30
  */
 //val customerRawRows = TopicLoader.getRawRows(sc,dataDir,serverProperties,"Customers",clientProps,csvColumnifier,
-//  segmentPredicates = Array(MinMaxPredicate.buildGreaterThanEqualSegmentPredicate(30,5)))
+//  segmentPredicates = Array(MinMaxPredicate.buildGreaterThanSegmentPredicate(30,5)))
 
 /*
  this version of the customer row loader uses a segment predicate to include only segments that contain customers with
@@ -35,16 +35,16 @@ val serverProperties = "/etc/kafka/kafka.properties"
  this is a segment predicate no segment files were actually read, only the indexes.
  */
 //val customerRawRows = TopicLoader.getRawRows(sc,dataDir,serverProperties,"Customers",clientProps,csvColumnifier,
-//  segmentPredicates = Array(MinMaxPredicate.buildGreaterThanEqualSegmentPredicate(120,5)))
+//  segmentPredicates = Array(MinMaxPredicate.buildGreaterThanSegmentPredicate(120,5)))
 
 /*
  this version of the customer row loader uses a row predicate to include only customer whose name starts with 'B'.
  As this is a row predicate all segments will be scanned and filtered.
  */
-//val customerRawRows = TopicLoader.getRawRows(sc,dataDir,serverProperties,"Customers",clientProps,csvColumnifier,
-//  rowPredicates = Array((rawRow: RawRow) => rawRow.getColumnVal(3).startsWith("B")))
+val customerRawRows = TopicLoader.getRawRows(sc,dataDir,serverProperties,"Customers",clientProps,csvColumnifier,
+  rowPredicates = Array((topicName: String,partition: String,rawRow: RawRow) => rawRow.getColumnVal(3).startsWith("B")))
 
-val customerRawRows = TopicLoader.getRawRows(sc,dataDir,serverProperties,"Customers",clientProps,csvColumnifier)
+//val customerRawRows = TopicLoader.getRawRows(sc,dataDir,serverProperties,"Customers",clientProps,csvColumnifier)
 
 customerRawRows.persist
 

@@ -4,8 +4,8 @@ import scala.io.Source
 
 object MinMaxPredicate {
 
-  def buildGreaterThanEqualSegmentPredicate(threshold: Int, columnIndex: Int) : (String) => Boolean =  {
-    (segmentFileName: String) => {
+  def buildGreaterThanSegmentPredicate(threshold: Int, columnIndex: Int) : (String, String, String) => Boolean =  {
+    (topicName: String, partition: String, segmentFileName: String) => {
       val indexFileName = segmentFileName.dropRight(3) + "minMax.index"
       var shouldRead = true
       for (line <- Source.fromFile(indexFileName).getLines) {

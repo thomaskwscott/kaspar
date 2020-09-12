@@ -38,8 +38,7 @@ services:
       KAFKA_DELETE_TOPIC_ENABLE: 'true'
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
       SPARK_WORKER_WEBUI_PORT: 8081
-      SPARK_MASTER_HOST: 'master'
-      JAVA_HOME: '/usr/lib/jvm/zulu-8-amd64'
+      SPARK_LOCAL_HOSTNAME: "worker1"
 
   worker2:
     image: kaspar-worker:1.0
@@ -67,6 +66,7 @@ services:
       KAFKA_DELETE_TOPIC_ENABLE: 'true'
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
       SPARK_WORKER_WEBUI_PORT: 8082
+      SPARK_LOCAL_HOSTNAME: "worker2"
 
   worker3:
     image: kaspar-worker:1.0
@@ -94,6 +94,7 @@ services:
       KAFKA_DELETE_TOPIC_ENABLE: 'true'
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
       SPARK_WORKER_WEBUI_PORT: 8083
+      SPARK_LOCAL_HOSTNAME: "worker3"
 
   master:
     image: kaspar-master:1.0

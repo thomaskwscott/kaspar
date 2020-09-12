@@ -33,8 +33,9 @@ The data load process:
  1. Use a Kafka AdminClient to determine which brokers have the data we are looking for. An RDD is created that contains
  entries for each broker and the partitions to be fetched from that broker. This RDD is partitioned so that each entry 
  will run as it's own task.
- 2. Spark schedules each task to a worker colocated with a broker. The first thing this task does is check the broker id
-  from the Kafka broker's configuration against the the broker id associated with the task. If these do not match the 
+ 2. Spark schedules each task to a worker colocated with a broker. Spark's preferredLocation features are used to guide 
+ this scheduling however this is not garunteed. For this reason, the first thing this task does is check the broker id
+ from the Kafka broker's configuration against the the broker id associated with the task. If these do not match the 
   task is failed and will be rescheduled by Spark
  3. If the broker ids match then the task will read the data directly from disk (using a method similar to Kafka's 
  dumpLogSegments command) and return a RDD containing the message values.

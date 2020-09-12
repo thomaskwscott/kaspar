@@ -1,10 +1,10 @@
 /demo/target/
 /.idea/
 /bin/spark-warehouse/
-/docker/resources/spark-2.4.5-bin-hadoop2.7/
-/docker/resources/spark-2.4.5-bin-hadoop2.7.tgz
+/docker/resources/spark*
 /bin/derby.log
 /bin/metastore_db/
 /demo/.idea/
 /demo/*.iml
 /demo/dependency-reduced-pom.xml
+*.DS_Store
