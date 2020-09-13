@@ -4,5 +4,6 @@ case class TaskAssignment(partitionId:Int,
                           locations: Seq[Location]
                          )
 case class Location(host: String,
-                    brokerId: Int
+                    brokerId: Int,
+                    dataDirs: Seq[String]
                    )

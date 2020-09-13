@@ -37,7 +37,7 @@ services:
       KAFKA_JMX_PORT: 9991
       KAFKA_DELETE_TOPIC_ENABLE: 'true'
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
-      #KAFKA_LOG_DIRS: '/var/lib/kafka/data,/var/lib/kafka/data2'
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data,/var/lib/kafka/data2'
       SPARK_WORKER_WEBUI_PORT: 8081
       SPARK_LOCAL_HOSTNAME: "worker1"
 
@@ -67,7 +67,7 @@ services:
       KAFKA_JMX_PORT: 9992
       KAFKA_DELETE_TOPIC_ENABLE: 'true'
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
-      #KAFKA_LOG_DIRS: '/var/lib/kafka/data,/var/lib/kafka/data2'
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data,/var/lib/kafka/data2'
       SPARK_WORKER_WEBUI_PORT: 8082
       SPARK_LOCAL_HOSTNAME: "worker2"
 
@@ -96,7 +96,7 @@ services:
       KAFKA_JMX_PORT: 9993
       KAFKA_DELETE_TOPIC_ENABLE: 'true'
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
-      #KAFKA_LOG_DIRS: '/var/lib/kafka/data,/var/lib/kafka/data2'
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data,/var/lib/kafka/data2'
       SPARK_WORKER_WEBUI_PORT: 8083
       SPARK_LOCAL_HOSTNAME: "worker3"
 
