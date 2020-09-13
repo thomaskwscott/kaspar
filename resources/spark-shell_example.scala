@@ -25,7 +25,7 @@ val dataDir = "/var/lib/kafka/data"
  ages >30. Not this is a segment predicate and do will not filter rows (i.e. you will still see rows with age <30 as
  long as the segment contains at least 1 row with age >30
  */
-//val customerRawRows = TopicLoader.getRawRows(sc,dataDir,serverProperties,"Customers",clientProps,csvColumnifier,
+//val customerRawRows = TopicLoader.getRawRows(sc,dataDir,"Customers",clientProps,csvColumnifier,
 //  segmentPredicates = Array(MinMaxPredicate.buildGreaterThanSegmentPredicate(30,5)))
 
 /*
