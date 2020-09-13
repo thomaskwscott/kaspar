@@ -41,7 +41,7 @@ val dataDir = "/var/lib/kafka/data"
  As this is a row predicate all segments will be scanned and filtered.
  */
 val customerRawRows = TopicLoader.getRawRows(sc,dataDir,"Customers",clientProps,csvColumnifier,
-  rowPredicates = Array((topicName: String,partition: String,rawRow: RawRow) => rawRow.getColumnVal(3).startsWith("B")))
+  rowPredicates = Array((topicName: String,partition: Int,rawRow: RawRow) => rawRow.getColumnVal(3).startsWith("B")))
 
 //val customerRawRows = TopicLoader.getRawRows(sc,dataDir,"Customers",clientProps,csvColumnifier)
 
