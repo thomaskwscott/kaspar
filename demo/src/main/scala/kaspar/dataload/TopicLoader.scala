@@ -3,13 +3,10 @@ package kaspar.dataload
 import java.io.{File, FilenameFilter, IOException}
 import java.util.{Collections, Properties}
 
-import kafka.serializer.{Decoder, StringDecoder}
-import kafka.utils.VerifiableProperties
-import kaspar.dataload.structure.{Columnifier, RawRow}
 import kaspar.dataload.metadata.{Location, TaskAssignment}
+import kaspar.dataload.structure.{Columnifier, RawRow}
 import org.apache.kafka.clients.admin.AdminClient
 import org.apache.kafka.common.record.FileRecords
-import org.apache.kafka.common.utils.Utils
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
@@ -20,7 +17,7 @@ object TopicLoader {
 
   def getRawRows(sc: SparkContext, topicName: String,
                  clientProps: Properties, columnifier: Columnifier,
-                 rowPredicates: Array[(String,Int,RawRow)=> Boolean] = Array(),
+                 rowPredicates: Array[(RawRow)=> Boolean] = Array(),
                  segmentPredicates: Array[(String,Int,String) => Boolean] = Array()) : RDD[RawRow] = {
 
     val adminClient: AdminClient = AdminClient.create(clientProps)
@@ -52,7 +49,7 @@ object TopicLoader {
   private def getFileRecords(topicName: String, partition: Int,
                              columnifier: Columnifier,
                              dataDirs: Seq[String],
-                             rowPredicates: Seq[(String,Int,RawRow) => Boolean],
+                             rowPredicates: Seq[(RawRow) => Boolean],
                              segmentPredicates: Seq[(String,Int,String) => Boolean]): Seq[RawRow] = {
 
     val partitionFiles = dataDirs.flatMap(dataDir => {
@@ -76,18 +73,14 @@ object TopicLoader {
       )) {
 
         val records: FileRecords = FileRecords.open(segmentFile)
-        val decoder: Decoder[String] = new StringDecoder(new VerifiableProperties)
-
         records.batches.asScala.flatMap(batch => {
           batch.asScala.map(record => {
             val newRow: RawRow = new RawRow()
-            val rawValue: String = partition + "-" + record.offset + "," + record.timestamp + "," +
-              decoder.fromBytes(Utils.readBytes(record.value))
-            newRow.setRawVals(columnifier.toColumns(rawValue))
+            newRow.setRawVals(columnifier.toColumns(record))
             newRow
           }).filter(newRow => {
             rowPredicates.forall(predicate => {
-              predicate(topicName,partition,newRow)
+              predicate(newRow)
             })
           })
         })

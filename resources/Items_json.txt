@@ -1,0 +1,15 @@
+{ "id": 0, "name": "Umbrella Hat", "price": 8.99 }
+{ "id": 1, "name": "Comfycup Public Transportation Cup Holder", "price": 16.99 }
+{ "id": 2, "name": "Wilton Edible Glitter", "price": 6.47 }
+{ "id": 3, "name": "Guacamole Bowl", "price": 9.98 }
+{ "id": 4, "name": "The Official A Game of Thrones Coloring Book", "price": 11.86 }
+{ "id": 5, "name": "Chia Pet Gremlin", "price": 19.99 }
+{ "id": 6, "name": "Lifelike Elephant Inflatable", "price": 159.95 }
+{ "id": 7, "name": "Meat Shredder Claws", "price": 16.94 }
+{ "id": 8, "name": "Lizard Glow Bowling Ball", "price": 99.95 }
+{ "id": 9, "name": "Inflatable Sloth Float", "price": 49.27 }
+{ "id": 10, "name": "Frog Eye Mask", "price": 7.55 }
+{ "id": 11, "name": "Mobile Phone Jail Cell", "price": 10.89 }
+{ "id": 12, "name": "Taco Sleeping Bag", "price": 28.99 }
+{ "id": 13, "name": "Floating Crocodile Decoy", "price": 55.99 }
+{ "id": 14, "name": "Karaoke Earphone", "price": 50.73 }

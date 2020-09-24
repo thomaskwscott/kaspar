@@ -1,5 +1,8 @@
 package kaspar.dataload.structure
 
+import org.apache.kafka.common.record.Record
+
+
 trait Columnifier {
-  def toColumns(raw: String):Seq[String]
+  def toColumns(raw: Record):Seq[Any]
 }

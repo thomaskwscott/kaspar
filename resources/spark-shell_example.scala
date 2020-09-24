@@ -38,19 +38,19 @@ val csvColumnifier = new CsvColumnifier(",")
  As this is a row predicate all segments will be scanned and filtered.
  */
 val customerRawRows = TopicLoader.getRawRows(sc,"Customers",clientProps,csvColumnifier,
-  rowPredicates = Array((topicName: String,partition: Int,rawRow: RawRow) => rawRow.getColumnVal(3).startsWith("B")))
+  rowPredicates = Array((rawRow: RawRow) => rawRow.getColumnVal(3).toString().startsWith("B")))
 
 //val customerRawRows = TopicLoader.getRawRows(sc,"Customers",clientProps,csvColumnifier)
 
 customerRawRows.persist
 
 val customerRows = customerRawRows.map(rawRow => RowFactory.create(
-  rawRow.getColumnVal(0),
-  rawRow.getColumnVal(1),
-  Integer.valueOf(rawRow.getColumnVal(2)),
-  rawRow.getColumnVal(3),
-  rawRow.getColumnVal(4),
-  Integer.valueOf(rawRow.getColumnVal(5))
+  rawRow.getColumnVal(0).toString(),
+  rawRow.getColumnVal(1).toString(),
+  Integer.valueOf(rawRow.getColumnVal(2).toString()),
+  rawRow.getColumnVal(3).toString(),
+  rawRow.getColumnVal(4).toString(),
+  Integer.valueOf(rawRow.getColumnVal(5).toString())
 ))
 
 val customerCols = Array(
@@ -68,10 +68,10 @@ val transactionRawRows = TopicLoader.getRawRows(sc,"Transactions",clientProps,cs
 transactionRawRows.persist
 
 val transactionRows = transactionRawRows.map(rawRow => RowFactory.create(
-  rawRow.getColumnVal(0),
-  rawRow.getColumnVal(1),
-  Integer.valueOf(rawRow.getColumnVal(2)),
-  Integer.valueOf(rawRow.getColumnVal(3))
+  rawRow.getColumnVal(0).toString(),
+  rawRow.getColumnVal(1).toString(),
+  Integer.valueOf(rawRow.getColumnVal(2).toString()),
+  Integer.valueOf(rawRow.getColumnVal(3).toString())
 ))
 
 val transactionCols = Array(
@@ -86,11 +86,11 @@ val itemRawRows = TopicLoader.getRawRows(sc,"Items",clientProps,csvColumnifier)
 itemRawRows.persist
 
 val itemRows = itemRawRows.map(rawRow =>   RowFactory.create(
-  rawRow.getColumnVal(0),
-  rawRow.getColumnVal(1),
-  Integer.valueOf(rawRow.getColumnVal(2)),
-  rawRow.getColumnVal(3),
-  java.lang.Double.valueOf(rawRow.getColumnVal(4))
+  rawRow.getColumnVal(0).toString(),
+  rawRow.getColumnVal(1).toString(),
+  Integer.valueOf(rawRow.getColumnVal(2).toString()),
+  rawRow.getColumnVal(3).toString(),
+  java.lang.Double.valueOf(rawRow.getColumnVal(4).toString())
 ))
 
 val itemCols = Array(
