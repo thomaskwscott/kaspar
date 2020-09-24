@@ -207,8 +207,9 @@ cd /home/ubuntu/bin
 ./launchShell.sh
 ```
 
-There is a far more interesting demo available in resources/spark-shell_example.scala. To run just copy the entirety of 
-this file and paste it into your Spark shell session
+There is a far more interesting demo available in resources/spark-shell_example.scala and 
+resources/spark-shell_example_json.scala. To run just copy the entirety of this file and paste it into your Spark 
+shell session.
 
 Note, if you wish to use segmentPredicates then create some simple indexes by running:
 
