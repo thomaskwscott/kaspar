@@ -10,6 +10,6 @@ COPY resources/launchSlave.sh /home/ubuntu/launchSlave.sh
 # install java 11
 RUN apt-get update
 RUN apt-get remove -y zulu-8
-RUN apt-get install -y zulu-11
+RUN apt-get install -y zulu-14
 
 CMD ["/home/ubuntu/launchSlave.sh"]

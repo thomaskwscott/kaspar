@@ -3,17 +3,55 @@ package kaspar.dataload
 import java.io.{File, FilenameFilter, IOException}
 import java.util.{Collections, Properties}
 
-import kaspar.dataload.metadata.{Location, TaskAssignment}
+import kaspar.dataload.metadata.ColumnType.ColumnType
+import kaspar.dataload.metadata.{ColumnType, Location, TaskAssignment}
 import kaspar.dataload.structure.{Columnifier, RawRow}
 import org.apache.kafka.clients.admin.AdminClient
 import org.apache.kafka.common.record.FileRecords
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.types.{DataTypes, Metadata, StructField, StructType}
+import org.apache.spark.sql.{RowFactory, SQLContext}
 
 import scala.collection.JavaConverters._
 
-
 object TopicLoader {
+
+  def registerTableFromRdd(sqlContext: SQLContext,rawRdd: RDD[RawRow],tableName: String, columnMappings: Seq[(String,ColumnType)]) = {
+
+    val enrichedMappings = Array(
+      ("_offset", ColumnType.LONG),
+      ("_timestamp", ColumnType.LONG)
+    ) ++ columnMappings
+
+    val rows = rawRdd.map(rawRow => RowFactory.create(
+
+      Array.tabulate(enrichedMappings.length){ i:Int => {
+        enrichedMappings(i)._2 match  {
+          case ColumnType.LONG => rawRow.getLongVal(i)
+          case ColumnType.STRING => rawRow.getStringVal(i)
+          case ColumnType.DOUBLE => rawRow.getDoubleVal(i)
+          case ColumnType.INTEGER => rawRow.getIntVal(i)
+          case _ => rawRow.getStringVal(i)
+      } }}:_*
+    ))
+
+    val cols = enrichedMappings.map( i => {
+      val dataType = i._2 match {
+        case ColumnType.LONG => DataTypes.LongType
+        case ColumnType.STRING => DataTypes.StringType
+        case ColumnType.DOUBLE => DataTypes.DoubleType
+        case ColumnType.INTEGER => DataTypes.IntegerType
+        case _ => DataTypes.StringType
+      }
+      StructField(i._1,dataType,false,Metadata.empty)
+    })
+
+    val schema = StructType(cols)
+
+    val df = sqlContext.createDataFrame(rows,schema)
+    df.createOrReplaceTempView(tableName)
+  }
 
   def getRawRows(sc: SparkContext, topicName: String,
                  clientProps: Properties, columnifier: Columnifier,
