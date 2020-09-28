@@ -21,6 +21,7 @@ object TopicLoader {
 
     val enrichedMappings = Array(
       ("_offset", ColumnType.LONG),
+      ("_partition", ColumnType.LONG),
       ("_timestamp", ColumnType.LONG)
     ) ++ columnMappings
 
@@ -114,7 +115,7 @@ object TopicLoader {
         records.batches.asScala.flatMap(batch => {
           batch.asScala.map(record => {
             val newRow: RawRow = new RawRow()
-            newRow.setRawVals(columnifier.toColumns(record))
+            newRow.setRawVals(columnifier.toColumns(partition,record))
             newRow
           }).filter(newRow => {
             rowPredicates.forall(predicate => {

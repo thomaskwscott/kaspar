@@ -13,7 +13,7 @@ class JsonColumnifier(val fieldMappings: Seq[(String,ColumnType)] = Seq.empty[(S
 
   @transient var decoder: Decoder[String] = null
 
-  override def toColumns(record: Record): scala.Seq[Any] = {
+  override def toColumns(partition: Int, record: Record): scala.Seq[Any] = {
 
     if(decoder == null) {
       decoder = new StringDecoder(new VerifiableProperties)
@@ -21,7 +21,7 @@ class JsonColumnifier(val fieldMappings: Seq[(String,ColumnType)] = Seq.empty[(S
 
     val fields = JSON.parseFull(decoder.fromBytes(Utils.readBytes(record.value))).get.asInstanceOf[Map[String, Any]]
 
-    Array(record.offset,record.timestamp) ++ fieldMappings.map {i => {
+    Array(record.offset,partition, record.timestamp) ++ fieldMappings.map {i => {
         i._2 match {
           case ColumnType.INTEGER => fields(i._1).asInstanceOf[Double].toInt
           case ColumnType.LONG => fields(i._1).asInstanceOf[Double].toLong

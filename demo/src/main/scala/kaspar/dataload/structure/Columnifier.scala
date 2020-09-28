@@ -4,5 +4,5 @@ import org.apache.kafka.common.record.Record
 
 
 trait Columnifier {
-  def toColumns(raw: Record):Seq[Any]
+  def toColumns(partition: Int, raw: Record):Seq[Any]
 }

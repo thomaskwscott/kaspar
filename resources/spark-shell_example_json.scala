@@ -38,7 +38,7 @@ val transactionsColumnifier = new JsonColumnifier(
 )
 
 val customerRawRows = TopicLoader.getRawRows(sc,"Customers_json",clientProps,customersColumnifier,
-  rowPredicates = Array((rawRow: RawRow) => rawRow.getColumnVal(3).toString().startsWith("B")))
+  rowPredicates = Array((rawRow: RawRow) => rawRow.getColumnVal(4).toString().startsWith("B")))
 customerRawRows.persist
 
 val transactionRawRows = TopicLoader.getRawRows(sc,"Transactions_json",clientProps,transactionsColumnifier)

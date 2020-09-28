@@ -9,13 +9,13 @@ class CsvColumnifier(val delimiter: String = ",") extends Columnifier with Seria
 
   @transient var decoder: Decoder[String] = null
 
-  override def toColumns(record: Record): scala.Seq[Any] = {
+  override def toColumns(partition: Int, record: Record): scala.Seq[Any] = {
 
     if(decoder == null) {
       decoder = new StringDecoder(new VerifiableProperties)
     }
 
-    val rawValue: String = record.offset + "," + record.timestamp + "," +
+    val rawValue: String = record.offset + "," + partition + "," + record.timestamp + "," +
       decoder.fromBytes(Utils.readBytes(record.value))
 
     rawValue.split(delimiter)

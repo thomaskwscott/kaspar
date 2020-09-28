@@ -38,7 +38,7 @@ val csvColumnifier = new CsvColumnifier(",")
  As this is a row predicate all segments will be scanned and filtered.
  */
 val customerRawRows = TopicLoader.getRawRows(sc,"Customers",clientProps,csvColumnifier,
-  rowPredicates = Array((rawRow: RawRow) => rawRow.getColumnVal(3).toString().startsWith("B")))
+  rowPredicates = Array((rawRow: RawRow) => rawRow.getColumnVal(4).toString().startsWith("B")))
 
 //val customerRawRows = TopicLoader.getRawRows(sc,"Customers",clientProps,csvColumnifier)
 
@@ -47,14 +47,16 @@ customerRawRows.persist
 val customerRows = customerRawRows.map(rawRow => RowFactory.create(
   rawRow.getColumnVal(0).toString(),
   rawRow.getColumnVal(1).toString(),
-  Integer.valueOf(rawRow.getColumnVal(2).toString()),
-  rawRow.getColumnVal(3).toString(),
+  rawRow.getColumnVal(2).toString(),
+  Integer.valueOf(rawRow.getColumnVal(3).toString()),
   rawRow.getColumnVal(4).toString(),
-  Integer.valueOf(rawRow.getColumnVal(5).toString())
+  rawRow.getColumnVal(5).toString(),
+  Integer.valueOf(rawRow.getColumnVal(6).toString())
 ))
 
 val customerCols = Array(
   new StructField("offset", DataTypes.StringType, false, Metadata.empty),
+  new StructField("partition", DataTypes.StringType, false, Metadata.empty),
   new StructField("timestamp", DataTypes.StringType, false, Metadata.empty),
   new StructField("customerId", DataTypes.IntegerType, false, Metadata.empty),
   new StructField("name", DataTypes.StringType, false, Metadata.empty),
@@ -70,12 +72,14 @@ transactionRawRows.persist
 val transactionRows = transactionRawRows.map(rawRow => RowFactory.create(
   rawRow.getColumnVal(0).toString(),
   rawRow.getColumnVal(1).toString(),
-  Integer.valueOf(rawRow.getColumnVal(2).toString()),
-  Integer.valueOf(rawRow.getColumnVal(3).toString())
+  rawRow.getColumnVal(2).toString(),
+  Integer.valueOf(rawRow.getColumnVal(3).toString()),
+  Integer.valueOf(rawRow.getColumnVal(4).toString())
 ))
 
 val transactionCols = Array(
   new StructField("offset", DataTypes.StringType, false, Metadata.empty),
+  new StructField("partition", DataTypes.StringType, false, Metadata.empty),
   new StructField("timestamp", DataTypes.StringType, false, Metadata.empty),
   new StructField("customerId", DataTypes.IntegerType, false, Metadata.empty),
   new StructField("itemId", DataTypes.IntegerType, false, Metadata.empty)
@@ -88,13 +92,15 @@ itemRawRows.persist
 val itemRows = itemRawRows.map(rawRow =>   RowFactory.create(
   rawRow.getColumnVal(0).toString(),
   rawRow.getColumnVal(1).toString(),
-  Integer.valueOf(rawRow.getColumnVal(2).toString()),
-  rawRow.getColumnVal(3).toString(),
-  java.lang.Double.valueOf(rawRow.getColumnVal(4).toString())
+  rawRow.getColumnVal(2).toString(),
+  Integer.valueOf(rawRow.getColumnVal(3).toString()),
+  rawRow.getColumnVal(4).toString(),
+  java.lang.Double.valueOf(rawRow.getColumnVal(5).toString())
 ))
 
 val itemCols = Array(
   new StructField("offset", DataTypes.StringType, false, Metadata.empty),
+  new StructField("partition", DataTypes.StringType, false, Metadata.empty),
   new StructField("timestamp", DataTypes.StringType, false, Metadata.empty),
   new StructField("itemId", DataTypes.IntegerType, false, Metadata.empty),
   new StructField("description", DataTypes.StringType, false, Metadata.empty),
