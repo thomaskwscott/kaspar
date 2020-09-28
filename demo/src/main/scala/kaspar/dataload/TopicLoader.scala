@@ -108,7 +108,7 @@ object TopicLoader {
 
       // check for segment predicate
       if(segmentPredicates.forall(predicate =>
-        predicate(topicName,partition,segmentFile.getPath())
+        predicate(partitionFiles,topicName,partition,segmentFile.getPath())
       )) {
 
         val records: FileRecords = FileRecords.open(segmentFile)
