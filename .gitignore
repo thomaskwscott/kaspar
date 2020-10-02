@@ -8,3 +8,5 @@
 /demo/*.iml
 /demo/dependency-reduced-pom.xml
 *.DS_Store
+aws_keys.sh
+exampleMemRead.txt

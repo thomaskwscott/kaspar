@@ -1,13 +1,17 @@
 package kaspar.dataload
 
 import java.io.{File, FilenameFilter, IOException}
+import java.nio.ByteBuffer
 import java.util.{Collections, Properties}
 
+import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
+import com.amazonaws.services.s3.AmazonS3ClientBuilder
+import com.amazonaws.services.s3.model.GetObjectRequest
 import kaspar.dataload.metadata.ColumnType.ColumnType
 import kaspar.dataload.metadata.{ColumnType, Location, TaskAssignment}
 import kaspar.dataload.structure.{Columnifier, RawRow}
 import org.apache.kafka.clients.admin.AdminClient
-import org.apache.kafka.common.record.FileRecords
+import org.apache.kafka.common.record.{AbstractRecords, FileRecords, MemoryRecords}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.{DataTypes, Metadata, StructField, StructType}
@@ -54,10 +58,10 @@ object TopicLoader {
     df.createOrReplaceTempView(tableName)
   }
 
-  def getRawRows(sc: SparkContext, topicName: String,
-                 clientProps: Properties, columnifier: Columnifier,
-                 rowPredicates: Array[(RawRow)=> Boolean] = Array(),
-                 segmentPredicates: Array[(String,Int,String) => Boolean] = Array()) : RDD[RawRow] = {
+  def getRawRowsFromKafka(sc: SparkContext, topicName: String,
+                          clientProps: Properties, columnifier: Columnifier,
+                          rowPredicates: Array[(RawRow)=> Boolean] = Array(),
+                          segmentPredicates: Array[(Seq[File],String,Int,String) => Boolean] = Array()) : RDD[RawRow] = {
 
     val adminClient: AdminClient = AdminClient.create(clientProps)
 
@@ -89,7 +93,7 @@ object TopicLoader {
                              columnifier: Columnifier,
                              dataDirs: Seq[String],
                              rowPredicates: Seq[(RawRow) => Boolean],
-                             segmentPredicates: Seq[(String,Int,String) => Boolean]): Seq[RawRow] = {
+                             segmentPredicates: Seq[(Seq[File],String,Int,String) => Boolean]): Seq[RawRow] = {
 
     val partitionFiles = dataDirs.flatMap(dataDir => {
       val foundFiles = new File(dataDir + "/" + topicName + "-" + partition).listFiles(
@@ -112,20 +116,47 @@ object TopicLoader {
       )) {
 
         val records: FileRecords = FileRecords.open(segmentFile)
-        records.batches.asScala.flatMap(batch => {
-          batch.asScala.map(record => {
-            val newRow: RawRow = new RawRow()
-            newRow.setRawVals(columnifier.toColumns(partition,record))
-            newRow
-          }).filter(newRow => {
-            rowPredicates.forall(predicate => {
-              predicate(newRow)
-            })
-          })
-        })
+        rowsFromRecords(records,partition,columnifier,rowPredicates)
       } else {
         Array[RawRow]()
       }
     })
+  }
+
+  @throws[IOException]
+  def getRawRowsFromS3(sc: SparkContext, columnifier: Columnifier, accessKey: String, secret: String, region: String,
+                           bucketName: String, s3objects: Seq[String],
+                           rowPredicates: Seq[(RawRow) => Boolean]): RDD[RawRow] = {
+
+    val rawData: RDD[RawRow] = sc.makeRDD(s3objects).flatMap(objectName => {
+
+      val awsCreds = new BasicAWSCredentials(accessKey, secret)
+      val s3Client = AmazonS3ClientBuilder.standard().withRegion(region).withCredentials(
+        new AWSStaticCredentialsProvider(awsCreds)).build()
+
+      val fullObject = s3Client.getObject(new GetObjectRequest(bucketName, objectName))
+
+      val bytes = fullObject.getObjectContent().readAllBytes()
+      val buffer = ByteBuffer.wrap(bytes)
+
+      val records = MemoryRecords.readableRecords(buffer)
+      rowsFromRecords(records,-1,columnifier,rowPredicates)
+
+    })
+    rawData
+  }
+
+  private def rowsFromRecords(records: AbstractRecords, partition: Int, columnifier: Columnifier,rowPredicates: Seq[(RawRow) => Boolean]): Seq[RawRow] = {
+    records.batches.asScala.flatMap(batch => {
+      batch.asScala.map(record => {
+        val newRow: RawRow = new RawRow()
+        newRow.setRawVals(columnifier.toColumns(partition, record))
+        newRow
+      }).filter(newRow => {
+        rowPredicates.forall(predicate => {
+          predicate(newRow)
+        })
+      })
+    }).toSeq
   }
 }

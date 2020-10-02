@@ -156,6 +156,28 @@ val customerDf = sqlContext.createDataFrame(customerRows,customerSchema)
 customerDf.createOrReplaceTempView("Customers")
 ```
 
+### Fetching segment data from S3.
+
+With the incoming tiered storage features of Kafka 
+(https://cwiki.apache.org/confluence/display/KAFKA/KIP-405%3A+Kafka+Tiered+Storage) Kaspar has been extended to read 
+segment files that are hosted in Amazon S3. These are loaded into RDDs in a similar way to the Kafka segments:
+
+```
+val accessKey = sys.env("AWS_ACCESS_KEY_ID")
+val secret = sys.env("AWS_SECRET_ACCESS_KEY"
+val region = "eu-west-1"
+val bucketName = "kaspar"
+val s3objects = Array("00000000000000000000.log")
+
+val customerRawRowsS3 = TopicLoader.getRawRowsFromS3(sc,customersColumnifier,accessKey, secret, region,
+  bucketName, s3objects,
+  rowPredicates = Array((rawRow: RawRow) => rawRow.getColumnVal(4).toString().startsWith("B")))
+```
+
+These RDDs can then be unioned with Kafka RDDs and then be registered as tables in the normal way. Note that Kaspar 
+does not currently associate a partition with S3 objects, this will be added as necessary when this scheme for this 
+data is implemented.
+
 ### Pushing Predicates down
 
 One of the advantages of this approach is that we can remove messages that are not required for the query at the read 
@@ -235,3 +257,8 @@ The demo reads and established these 3 topics as Spark Dataframes before joining
  join Items
  on Items.itemId = Transactions.itemId
 ```
+
+### Things to try:
+
+* Kaspar should be able to run queries across multiple Kafka clusters
+* Run more Spark nodes than Kafka brokers for queries that can be partitioned further after the initial read.
