@@ -1,12 +1,12 @@
-/demo/target/
+/kaspar/target/
 /.idea/
 /bin/spark-warehouse/
 /docker/resources/spark*
 /bin/derby.log
 /bin/metastore_db/
-/demo/.idea/
-/demo/*.iml
-/demo/dependency-reduced-pom.xml
+/kaspar/.idea/
+/kaspar/*.iml
+/kaspar/dependency-reduced-pom.xml
 *.DS_Store
 aws_keys.sh
 exampleMemRead.txt

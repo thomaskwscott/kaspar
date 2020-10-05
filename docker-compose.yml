@@ -111,6 +111,6 @@ services:
       - 7077:7077
     volumes:
       - ./serviceConfig/spark-defaults.conf:/usr/local/spark/conf/spark-defaults.conf
-      - ./demo:/home/ubuntu/demo
+      - ./kaspar:/home/ubuntu/kaspar
       - ./bin:/home/ubuntu/bin
       - ./resources:/home/ubuntu/resources

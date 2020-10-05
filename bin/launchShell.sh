@@ -6,4 +6,4 @@
 --conf "spark.blacklist.timeout=1s" \
 --conf "spark.blacklist.task.maxTaskAttemptsPerNode=1" \
 --conf "spark.scheduler.blacklist.unschedulableTaskSetTimeout=1s" \
---jars ../demo/target/kaspar-1.0-SNAPSHOT.jar
+--jars ../kaspar/target/kaspar-1.0-SNAPSHOT.jar
