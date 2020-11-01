@@ -21,7 +21,7 @@ class JsonColumnifier(val fieldMappings: Seq[(String,ColumnType)] = Seq.empty[(S
 
     val fields = JSON.parseFull(decoder.fromBytes(Utils.readBytes(record.value))).get.asInstanceOf[Map[String, Any]]
 
-    Array(record.offset,partition, record.timestamp) ++ fieldMappings.map {i => {
+    Array[Any](record.offset,partition, record.timestamp) ++ fieldMappings.map {i => {
         i._2 match {
           case ColumnType.INTEGER => fields(i._1).asInstanceOf[Double].toInt
           case ColumnType.LONG => fields(i._1).asInstanceOf[Double].toLong

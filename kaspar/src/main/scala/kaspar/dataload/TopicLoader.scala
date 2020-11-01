@@ -25,7 +25,7 @@ object TopicLoader {
 
     val enrichedMappings = Array(
       ("_offset", ColumnType.LONG),
-      ("_partition", ColumnType.LONG),
+      ("_partition", ColumnType.INTEGER),
       ("_timestamp", ColumnType.LONG)
     ) ++ columnMappings
 

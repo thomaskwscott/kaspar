@@ -92,6 +92,8 @@ val transactionDf = sqlContext.createDataFrame(transactionRows,transactionSchema
 transactionDf.createOrReplaceTempView("Transactions")
 ```
 
+An example of this can be found in /resource/examples/csvSQL
+
 ### Creating rows from messages(json):
 
 An alternative Columnifier for working with JSON messages is provided in the JsonColumnifier. This maps 
@@ -156,6 +158,8 @@ val customerDf = sqlContext.createDataFrame(customerRows,customerSchema)
 customerDf.createOrReplaceTempView("Customers")
 ```
 
+An example of this can be found in /resource/examples/jsonSQL
+
 ### Fetching segment data from S3.
 
 With the incoming tiered storage features of Kafka 
@@ -177,6 +181,8 @@ val customerRawRowsS3 = TopicLoader.getRawRowsFromS3(sc,customersColumnifier,acc
 These RDDs can then be unioned with Kafka RDDs and then be registered as tables in the normal way. Note that Kaspar 
 does not currently associate a partition with S3 objects, this will be added as necessary when this scheme for this 
 data is implemented.
+
+An example of this can be found in /resources/examples/s3_source
 
 ### Pushing Predicates down
 
@@ -207,6 +213,16 @@ Note: A segment predicate only determines whether or not a segment file should b
 inside the segment. For instance, the above reads an index that contains the max and min values for customer age in 
 the segments, if the segment contains at least 1 row with and age higher than 30 then the segment will be read. However
 if no row predicate is supplied this read will also include rows in the segment with age <= 30.
+
+An example of this can be found in /resources/examples/predicates
+
+### Adding new data
+
+New topic data can be appended to existing Rdds by fetching data with predicates indicating start offsets for reads. 
+Kaspar takes advantage of Kafka's segment naming convention (segments are named after their first offset) to achieve 
+this. 
+
+An example of this can be found in /resources/examples/top_up
 
 ## Installing
  

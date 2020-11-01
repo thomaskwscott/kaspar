@@ -4,6 +4,7 @@ import kaspar.dataload.TopicLoader
 import kaspar.dataload.structure.JsonColumnifier
 import kaspar.dataload.structure.RawRow
 import kaspar.dataload.predicate.MinMaxPredicate
+import kaspar.dataload.predicate.OffsetPredicate
 import kaspar.dataload.metadata.ColumnType
 import kaspar.dataload.metadata.ColumnType.ColumnType
 
@@ -37,39 +38,15 @@ val transactionsColumnifier = new JsonColumnifier(
   transactionsColumnMappings
 )
 
-val customerRawRows = TopicLoader.getRawRowsFromKafka(sc,"Customers_json",clientProps,customersColumnifier,
-  rowPredicates = Array((rawRow: RawRow) => rawRow.getColumnVal(4).toString().startsWith("B")))
-
-// segment predicate example
-//val customerRawRows = TopicLoader.getRawRowsFromKafka(sc,"Customers_json",clientProps,customersColumnifier,
-//  segmentPredicates = Array(MinMaxPredicate.buildGreaterThanSegmentPredicate(30,5)))
-
-
-
-//val accessKey = sys.env("AWS_ACCESS_KEY_ID")
-//val secret = sys.env("AWS_SECRET_ACCESS_KEY")
-//val region = "eu-west-1"
-//val bucketName = "kaspar"
-//val s3objects = Array("00000000000000000000.log")
-
-//val customerRawRowsS3 = TopicLoader.getRawRowsFromS3(sc,customersColumnifier,accessKey, secret, region,
-//  bucketName, s3objects,
-//  rowPredicates = Array((rawRow: RawRow) => rawRow.getColumnVal(4).toString().startsWith("B")))
-
-
-
-customerRawRows.persist
+val customerRawRows = TopicLoader.getRawRowsFromKafka(sc,"Customers_json",clientProps,customersColumnifier)
 
 val transactionRawRows = TopicLoader.getRawRowsFromKafka(sc,"Transactions_json",clientProps,transactionsColumnifier)
-transactionRawRows.persist
 
 val itemRawRows = TopicLoader.getRawRowsFromKafka(sc,"Items_json",clientProps,itemsColumnifier)
-itemRawRows.persist
 
 val sqlContext = new SQLContext(sc)
 
 TopicLoader.registerTableFromRdd(sqlContext,customerRawRows,"Customers",customersColumnMappings)
-//TopicLoader.registerTableFromRdd(sqlContext,customerRawRowsS3,"Customers",customersColumnMappings)
 TopicLoader.registerTableFromRdd(sqlContext,transactionRawRows,"Transactions",transactionsColumnMappings)
 TopicLoader.registerTableFromRdd(sqlContext,itemRawRows,"Items",itemsColumnMappings)
 

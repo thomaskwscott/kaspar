@@ -11,7 +11,7 @@ object MinMaxPredicate {
       val indexFileName = segmentFileName.dropRight(3) + "minMax.index"
       var shouldRead = true
       for (line <- Source.fromFile(indexFileName).getLines) {
-        if(line.split(':')(0).toInt == columnIndex && line.split(':')(2).toInt < threshold) {
+        if(line.split(':')(0).toInt == columnIndex && line.split(':')(2).toInt <= threshold) {
           shouldRead = false
         }
       }

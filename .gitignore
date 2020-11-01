@@ -3,6 +3,7 @@
 /bin/spark-warehouse/
 /docker/resources/spark*
 /bin/derby.log
+/bin/producer.properties
 /bin/metastore_db/
 /kaspar/.idea/
 /kaspar/*.iml

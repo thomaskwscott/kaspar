@@ -17,32 +17,7 @@ val clientProps = new java.util.Properties
 clientProps.setProperty("bootstrap.servers","worker1:9091")
 val csvColumnifier = new CsvColumnifier(",")
 
-/*
- this version of the customer row loader uses a segment predicate to include only segments that contain customers with
- ages >30. Not this is a segment predicate and do will not filter rows (i.e. you will still see rows with age <30 as
- long as the segment contains at least 1 row with age >30
- */
-//val customerRawRows = TopicLoader.getRawRows(sc,"Customers",clientProps,csvColumnifier,
-//  segmentPredicates = Array(MinMaxPredicate.buildGreaterThanSegmentPredicate(30,5)))
-
-/*
- this version of the customer row loader uses a segment predicate to include only segments that contain customers with
- ages >120. This should return no rows as none of the customers are that old. Important to note here is that, because
- this is a segment predicate no segment files were actually read, only the indexes.
- */
-//val customerRawRows = TopicLoader.getRawRows(sc,"Customers",clientProps,csvColumnifier,
-//  segmentPredicates = Array(MinMaxPredicate.buildGreaterThanSegmentPredicate(120,5)))
-
-/*
- this version of the customer row loader uses a row predicate to include only customer whose name starts with 'B'.
- As this is a row predicate all segments will be scanned and filtered.
- */
-val customerRawRows = TopicLoader.getRawRows(sc,"Customers",clientProps,csvColumnifier,
-  rowPredicates = Array((rawRow: RawRow) => rawRow.getColumnVal(4).toString().startsWith("B")))
-
-//val customerRawRows = TopicLoader.getRawRows(sc,"Customers",clientProps,csvColumnifier)
-
-customerRawRows.persist
+val customerRawRows = TopicLoader.getRawRowsFromKafka(sc,"Customers",clientProps,csvColumnifier)
 
 val customerRows = customerRawRows.map(rawRow => RowFactory.create(
   rawRow.getColumnVal(0).toString(),
@@ -65,9 +40,7 @@ val customerCols = Array(
 )
 val customerSchema = new StructType(customerCols)
 
-
-val transactionRawRows = TopicLoader.getRawRows(sc,"Transactions",clientProps,csvColumnifier)
-transactionRawRows.persist
+val transactionRawRows = TopicLoader.getRawRowsFromKafka(sc,"Transactions",clientProps,csvColumnifier)
 
 val transactionRows = transactionRawRows.map(rawRow => RowFactory.create(
   rawRow.getColumnVal(0).toString(),
@@ -86,8 +59,7 @@ val transactionCols = Array(
 )
 val transactionSchema = new StructType(transactionCols)
 
-val itemRawRows = TopicLoader.getRawRows(sc,"Items",clientProps,csvColumnifier)
-itemRawRows.persist
+val itemRawRows = TopicLoader.getRawRowsFromKafka(sc,"Items",clientProps,csvColumnifier)
 
 val itemRows = itemRawRows.map(rawRow =>   RowFactory.create(
   rawRow.getColumnVal(0).toString(),
