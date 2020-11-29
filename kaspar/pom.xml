@@ -36,6 +36,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <release>14</release>
+                    <source>13</source>
+                    <target>13</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -76,9 +78,9 @@
                                 </filter>
                             </filters>
                             <artifactSet>
-                                <excludes>
-                                    <exclude>org.apache.spark:*</exclude>
-                                </excludes>
+                                <includes>
+                                    <include>com.amazonaws:*</include>
+                                </includes>
                             </artifactSet>
                         </configuration>
                     </execution>
