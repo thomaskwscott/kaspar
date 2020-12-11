@@ -7,7 +7,9 @@ import kaspar.dataload.metadata.ColumnType.ColumnType
 import org.apache.kafka.common.record.Record
 import org.apache.kafka.common.utils.Utils
 
-import scala.util.parsing.json.JSON
+import org.json4s._
+import org.json4s.jackson.JsonMethods._
+
 
 class JsonColumnifier(val fieldMappings: Seq[(String,ColumnType)] = Seq.empty[(String,ColumnType)]) extends Columnifier with Serializable {
 
@@ -19,15 +21,17 @@ class JsonColumnifier(val fieldMappings: Seq[(String,ColumnType)] = Seq.empty[(S
       decoder = new StringDecoder(new VerifiableProperties)
     }
 
-    val fields = JSON.parseFull(decoder.fromBytes(Utils.readBytes(record.value))).get.asInstanceOf[Map[String, Any]]
+    val fields = parse(decoder.fromBytes(Utils.readBytes(record.value))).asInstanceOf[JObject]
+
 
     Array[Any](record.offset,partition, record.timestamp) ++ fieldMappings.map {i => {
+        implicit val formats = DefaultFormats
+        val fieldVal = (fields \ i._1)
         i._2 match {
-          case ColumnType.INTEGER => fields(i._1).asInstanceOf[Double].toInt
-          case ColumnType.LONG => fields(i._1).asInstanceOf[Double].toLong
-          case ColumnType.DOUBLE => fields(i._1)
-          case ColumnType.STRING => fields(i._1)
-          case default => fields(i._1).toString
+          case ColumnType.INTEGER => fieldVal.extract[Int]
+          case ColumnType.LONG => fieldVal.extract[Long]
+          case ColumnType.DOUBLE => fieldVal.extract[Double]
+          case default => fieldVal.toString
         }
       }
     }

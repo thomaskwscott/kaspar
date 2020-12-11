@@ -1,12 +1,11 @@
-# Loading JSON messages and querying them with SparkSQL
+# Simple select * query  with SparkSQL
 
-This demo loads messages from 3 topics that store JSON messages and joins them using sparkSQL
+This demo loads messages from 2 topics that store JSON messages and displays them using sparkSQL
 
 ## Input topics
 
 1. Customers_json - customer id, name, address and age
 2. Items_json - item id, name and price
-3. Transactions_json - customer id and item id
 
 ## Setup
 
