@@ -31,7 +31,7 @@ class JsonColumnifier(val fieldMappings: Seq[(String,ColumnType)] = Seq.empty[(S
           case ColumnType.INTEGER => fieldVal.extract[Int]
           case ColumnType.LONG => fieldVal.extract[Long]
           case ColumnType.DOUBLE => fieldVal.extract[Double]
-          case default => fieldVal.toString
+          case default => fieldVal.extract[String]
         }
       }
     }
