@@ -19,26 +19,33 @@ object OffsetPredicate {
       } else {
         val offsetSegmentsMap = partitionFiles.map(file => file.getName.dropRight(4).toInt -> file.getPath).toMap
         val offsetSegments = offsetSegmentsMap.keys.toArray.sorted
-        // find the segment which contains the crossing offset.
+
         var shouldRead = false
-        val threshold = partitionThresholds(partition)
-        breakable { for (index <- 1 until offsetSegments.length)
-          {
-            if (offsetSegments(index) > threshold) {
-              // this segment for sure should be read
-              if (segmentFileName == offsetSegmentsMap(offsetSegments(index))) {
-                shouldRead = true
-                break
-              }
-              // if we are more than one ahead of the threshold we read the predecessor segment too
-              if(offsetSegments(index) > threshold + 1L && segmentFileName == offsetSegmentsMap(offsetSegments(index-1))) {
-                shouldRead = true
-                break
+
+        // if there is only 1 segment or this is the last segment we can bail out here as we will always read it
+        if (offsetSegments.length == 1 || segmentFileName == offsetSegmentsMap(offsetSegments.last)) {
+          true
+        } else {
+          // find the segment which contains the crossing offset.
+          val threshold = partitionThresholds(partition)
+          breakable {
+            for (index <- 1 until offsetSegments.length - 1) {
+              if (offsetSegments(index) > threshold) {
+                // this segment for sure should be read
+                if (segmentFileName == offsetSegmentsMap(offsetSegments(index))) {
+                  shouldRead = true
+                  break
+                }
+                // if we are more than one ahead of the threshold we read the predecessor segment too
+                if (offsetSegments(index) > threshold + 1L && segmentFileName == offsetSegmentsMap(offsetSegments(index - 1))) {
+                  shouldRead = true
+                  break
+                }
               }
             }
           }
+          shouldRead
         }
-        shouldRead
       }
     }
   }

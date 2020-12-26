@@ -6,6 +6,8 @@ import kaspar.dataload.predicate.OffsetPredicate
 import kaspar.dataload.metadata.ColumnType
 import kaspar.dataload.metadata.ColumnType.ColumnType
 
+import org.apache.spark.sql.SQLContext
+
 val clientProps = new java.util.Properties
 clientProps.setProperty("bootstrap.servers","worker1:9091")
 
@@ -20,21 +22,29 @@ val customersColumnifier = new JsonColumnifier(
 )
 
 val initialThresholds = Map(
-  0 -> 0L,
-  1 -> 0L,
-  2 -> 0L,
-  3 -> 0L,
-  4 -> 0L,
-  5 -> 0L
+  0 -> -1L,
+  1 -> -1L,
+  2 -> -1L,
+  3 -> -1L,
+  4 -> -1L,
+  5 -> -1L
 )
 
-// load 2nd offset+ from each partition
 val customerRawRows = TopicLoader.getRawRowsFromKafka(sc,"Customers_json",clientProps,customersColumnifier,
   rowPredicates = Array(OffsetPredicate.buildGreaterThanRowPredicate(initialThresholds)))
 
-// confirm 6 rows read (there are 10 customers and 6 partitions so this should read the last 4)
-// all offsets should be above 0
-customerRawRows.collect.map(i => i.getLongVal(0))
+val sqlContext = new SQLContext(sc)
+
+TopicLoader.registerTableFromRdd(sqlContext,customerRawRows,"Customers",customersColumnMappings)
+
+val customersSql =
+  """
+    | select *
+    | from Customers
+    |""".stripMargin
+
+// 10 rows
+sqlContext.sql(customersSql).show(100)
 
 // lets get the latest offset we have read for each partition in a map (this will be used as input to the next predicate)
 val latestThresholds = (customerRawRows.collect.map(i=>(i.getIntVal(1).asInstanceOf[Int],i.getLongVal(0).asInstanceOf[Long])).toSet ++ initialThresholds.toSet).groupBy(_._1).mapValues(i => i.map(_._2).max).map(identity)
@@ -69,8 +79,7 @@ topUpRawRows.collect.map(i => (i.getIntVal(1),i.getLongVal(0)))
 // now we union the original and top up rdds
 val allRows = sc.union(customerRawRows,topUpRawRows)
 
-customerRawRows.collect.size
-topUpRawRows.collect.size
+TopicLoader.registerTableFromRdd(sqlContext,allRows,"Customers",customersColumnMappings)
 
-// allRows size is the sum of customerRawRows and topUpRawRows
-allRows.collect.size
+// 12 rows now
+sqlContext.sql(customersSql).show(100)
