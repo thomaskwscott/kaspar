@@ -15,3 +15,5 @@ kafka-console-producer --broker-list worker1:9091 --topic Customers_json --produ
 kafka-console-producer --broker-list worker1:9091 --topic Transactions_json < /home/ubuntu/resources/Transactions_json.txt
 kafka-console-producer --broker-list worker1:9091 --topic Items_json < /home/ubuntu/resources/Items_json.txt
 
+kafka-topics --bootstrap-server alt-worker1:10091 --create --topic Alt_customers_json --replication-factor 1 --partitions 6
+kafka-console-producer --broker-list alt-worker1:10091 --topic Alt_customers_json --producer.config producer.properties < /home/ubuntu/resources/Customers_json.txt
