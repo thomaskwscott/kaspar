@@ -40,7 +40,7 @@ services:
       KAFKA_LOG_DIRS: '/var/lib/kafka/data,/var/lib/kafka/data2'
       SPARK_WORKER_WEBUI_PORT: 8081
       SPARK_LOCAL_HOSTNAME: "worker1"
-
+      SPARK_MASTER_URL: "spark://master:7077"
 
   worker2:
     image: kaspar-worker:1.0
@@ -70,6 +70,7 @@ services:
       KAFKA_LOG_DIRS: '/var/lib/kafka/data,/var/lib/kafka/data2'
       SPARK_WORKER_WEBUI_PORT: 8082
       SPARK_LOCAL_HOSTNAME: "worker2"
+      SPARK_MASTER_URL: "spark://master:7077"
 
   worker3:
     image: kaspar-worker:1.0
@@ -99,6 +100,7 @@ services:
       KAFKA_LOG_DIRS: '/var/lib/kafka/data,/var/lib/kafka/data2'
       SPARK_WORKER_WEBUI_PORT: 8083
       SPARK_LOCAL_HOSTNAME: "worker3"
+      SPARK_MASTER_URL: "spark://master:7077"
 
   master:
     image: kaspar-master:1.0
@@ -155,3 +157,4 @@ services:
       KAFKA_LOG_DIRS: '/var/lib/kafka/data,/var/lib/kafka/data2'
       SPARK_WORKER_WEBUI_PORT: 10081
       SPARK_LOCAL_HOSTNAME: "alt-worker1"
+      SPARK_MASTER_URL: "spark://master:7077"
