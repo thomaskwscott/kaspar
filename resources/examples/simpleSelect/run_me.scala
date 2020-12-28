@@ -1,7 +1,7 @@
 import org.apache.spark.sql.SQLContext
 
 import kaspar.dataload.TopicLoader
-import kaspar.dataload.structure.JsonColumnifier
+import kaspar.dataload.structure.SimpleJsonValueColumnifier
 import kaspar.dataload.structure.RawRow
 import kaspar.dataload.metadata.ColumnType
 import kaspar.dataload.metadata.ColumnType.ColumnType
@@ -15,7 +15,7 @@ val customersColumnMappings =   Array(
   ("address",ColumnType.STRING),
   ("age",ColumnType.INTEGER)
 )
-val customersColumnifier = new JsonColumnifier(
+val customersColumnifier = new SimpleJsonValueColumnifier(
   customersColumnMappings
 )
 
@@ -38,7 +38,7 @@ val itemsColumnMappings = Array(
   ("name",ColumnType.STRING),
   ("price",ColumnType.DOUBLE)
 )
-val itemsColumnifier = new JsonColumnifier(
+val itemsColumnifier = new SimpleJsonValueColumnifier(
   itemsColumnMappings
 )
 

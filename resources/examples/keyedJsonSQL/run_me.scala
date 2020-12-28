@@ -2,6 +2,7 @@ import org.apache.spark.sql.SQLContext
 
 import kaspar.dataload.TopicLoader
 import kaspar.dataload.structure.SimpleJsonValueColumnifier
+import kaspar.dataload.structure.SimpleJsonKeyValueColumnifier
 import kaspar.dataload.structure.RawRow
 import kaspar.dataload.predicate.MinMaxPredicate
 import kaspar.dataload.predicate.OffsetPredicate
@@ -21,12 +22,15 @@ val customersColumnifier = new SimpleJsonValueColumnifier(
   customersColumnMappings
 )
 
+// we add an extra field to denote whether we will be getting the columns from the message key or value
 val itemsColumnMappings = Array(
-  ("id",ColumnType.INTEGER),
-  ("name",ColumnType.STRING),
-  ("price",ColumnType.DOUBLE)
+  // this on is from the key
+  ("item_id",ColumnType.INTEGER,true),
+  // these 2 are from the value
+  ("name",ColumnType.STRING,false),
+  ("price",ColumnType.DOUBLE,false)
 )
-val itemsColumnifier = new SimpleJsonValueColumnifier(
+val itemsColumnifier = new SimpleJsonKeyValueColumnifier(
   itemsColumnMappings
 )
 
@@ -48,7 +52,7 @@ val sqlContext = new SQLContext(sc)
 
 TopicLoader.registerTableFromRdd(sqlContext,customerRawRows,"Customers",customersColumnMappings)
 TopicLoader.registerTableFromRdd(sqlContext,transactionRawRows,"Transactions",transactionsColumnMappings)
-TopicLoader.registerTableFromRdd(sqlContext,itemRawRows,"Items",itemsColumnMappings)
+TopicLoader.registerTableFromRdd(sqlContext,itemRawRows,"Items",itemsColumnMappings.map(i => (i._1,i._2)))
 
 val sql =
   """
@@ -57,7 +61,7 @@ val sql =
     | join Transactions
     | on Customers.id = Transactions.customer_id
     | join Items
-    | on Items.id = Transactions.item_id
+    | on Items.item_id = Transactions.item_id
     |""".stripMargin
 
 sqlContext.sql(sql).show(100)

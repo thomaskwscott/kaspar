@@ -1,5 +1,5 @@
 import kaspar.dataload.TopicLoader
-import kaspar.dataload.structure.JsonColumnifier
+import kaspar.dataload.structure.SimpleJsonValueColumnifier
 import kaspar.dataload.structure.RawRow
 import kaspar.dataload.predicate.MinMaxPredicate
 import kaspar.dataload.predicate.OffsetPredicate
@@ -19,7 +19,7 @@ val customersColumnMappings =   Array(
   ("address",ColumnType.STRING),
   ("age",ColumnType.INTEGER)
 )
-val customersColumnifier = new JsonColumnifier(
+val customersColumnifier = new SimpleJsonValueColumnifier(
   customersColumnMappings
 )
 
@@ -28,7 +28,7 @@ val itemsColumnMappings = Array(
   ("name",ColumnType.STRING),
   ("price",ColumnType.DOUBLE)
 )
-val itemsColumnifier = new JsonColumnifier(
+val itemsColumnifier = new SimpleJsonValueColumnifier(
   itemsColumnMappings
 )
 
@@ -36,7 +36,7 @@ val transactionsColumnMappings = Array(
   ("customer_id",ColumnType.INTEGER),
   ("item_id",ColumnType.INTEGER),
 )
-val transactionsColumnifier = new JsonColumnifier(
+val transactionsColumnifier = new SimpleJsonValueColumnifier(
   transactionsColumnMappings
 )
 

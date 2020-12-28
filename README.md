@@ -96,15 +96,15 @@ An example of this can be found in /resource/examples/csvSQL
 
 ### Creating rows from messages(json):
 
-An alternative Columnifier for working with JSON messages is provided in the JsonColumnifier. This maps 
+An alternative Columnifier for working with JSON messages is provided in the SimpleJsonValueColumnifier. This maps 
 fields in json messages to columns (and their appropriate types) The first 2 columns (rawRow.getLongVal(0) and 
 rawRow.getLongVal(1)) are currently reserved for offset and timestamps of the message in Long format when using 
 JSON messages. 
 
-A JsonColumnifier must be passed a mapping of strings and column types as below:
+A SimpleJsonValueColumnifier must be passed a mapping of strings and column types as below:
 
 ```
-val customersColumnifier = new JsonColumnifier(
+val customersColumnifier = new SimpleJsonValueColumnifier(
   Array(
     ("id",ColumnType.INTEGER),
     ("name",ColumnType.STRING),
