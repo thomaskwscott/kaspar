@@ -1,15 +1,15 @@
-{ "item_id": 0}|{ "id": 0, "name": "Umbrella Hat", "price": 8.99 }
-{ "item_id": 1}|{ "id": 1, "name": "Comfycup Public Transportation Cup Holder", "price": 16.99 }
-{ "item_id": 2}|{ "id": 2, "name": "Wilton Edible Glitter", "price": 6.47 }
-{ "item_id": 3}|{ "id": 3, "name": "Guacamole Bowl", "price": 9.98 }
-{ "item_id": 4}|{ "id": 4, "name": "The Official A Game of Thrones Coloring Book", "price": 11.86 }
-{ "item_id": 5}|{ "id": 5, "name": "Chia Pet Gremlin", "price": 19.99 }
-{ "item_id": 6}|{ "id": 6, "name": "Lifelike Elephant Inflatable", "price": 159.95 }
-{ "item_id": 7}|{ "id": 7, "name": "Meat Shredder Claws", "price": 16.94 }
-{ "item_id": 8}|{ "id": 8, "name": "Lizard Glow Bowling Ball", "price": 99.95 }
-{ "item_id": 9}|{ "id": 9, "name": "Inflatable Sloth Float", "price": 49.27 }
-{ "item_id": 10}|{ "id": 10, "name": "Frog Eye Mask", "price": 7.55 }
-{ "item_id": 11}|{ "id": 11, "name": "Mobile Phone Jail Cell", "price": 10.89 }
-{ "item_id": 12}|{ "id": 12, "name": "Taco Sleeping Bag", "price": 28.99 }
-{ "item_id": 13}|{ "id": 13, "name": "Floating Crocodile Decoy", "price": 55.99 }
-{ "item_id": 14}|{ "id": 14, "name": "Karaoke Earphone", "price": 50.73 }
+{ "item_id": 0}|{ "id": 0, "name": "Umbrella Hat", "price": 8.99, "internal": { "margin": 1.50 } }
+{ "item_id": 1}|{ "id": 1, "name": "Comfycup Public Transportation Cup Holder", "price": 16.99, "internal": { "margin": 2.50 } }
+{ "item_id": 2}|{ "id": 2, "name": "Wilton Edible Glitter", "price": 6.47, "internal": { "margin": 1.20 } }
+{ "item_id": 3}|{ "id": 3, "name": "Guacamole Bowl", "price": 9.98, "internal": { "margin": 1.60 } }
+{ "item_id": 4}|{ "id": 4, "name": "The Official A Game of Thrones Coloring Book", "price": 11.86, "internal": { "margin": 1.80 } }
+{ "item_id": 5}|{ "id": 5, "name": "Chia Pet Gremlin", "price": 19.99, "internal": { "margin": 4.00 }  }
+{ "item_id": 6}|{ "id": 6, "name": "Lifelike Elephant Inflatable", "price": 159.95, "internal": { "margin": 15.00 } }
+{ "item_id": 7}|{ "id": 7, "name": "Meat Shredder Claws", "price": 16.94, "internal": { "margin": 1.70 } }
+{ "item_id": 8}|{ "id": 8, "name": "Lizard Glow Bowling Ball", "price": 99.95, "internal": { "margin": 10.00 } }
+{ "item_id": 9}|{ "id": 9, "name": "Inflatable Sloth Float", "price": 49.27, "internal": { "margin": 5.00 } }
+{ "item_id": 10}|{ "id": 10, "name": "Frog Eye Mask", "price": 7.55, "internal": { "margin": 1.40 } }
+{ "item_id": 11}|{ "id": 11, "name": "Mobile Phone Jail Cell", "price": 10.89, "internal": { "margin": 2.10 } }
+{ "item_id": 12}|{ "id": 12, "name": "Taco Sleeping Bag", "price": 28.99, "internal": { "margin": 12.00 } }
+{ "item_id": 13}|{ "id": 13, "name": "Floating Crocodile Decoy", "price": 55.99, "internal": { "margin": 22.00 } }
+{ "item_id": 14}|{ "id": 14, "name": "Karaoke Earphone", "price": 50.73, "internal": { "margin": 23.00 } }
