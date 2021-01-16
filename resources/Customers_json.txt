@@ -1,7 +1,7 @@
 { "id" : 0, "name": "Bruce Wayne", "address": "Wayne Manor", "age": 36 }
 { "id" : 1, "name": "Harry Potter", "address": "4 Privet Drive", "age": 11 }
 { "id" : 2, "name": "Arthur Dent", "address": "155 Country Lane", "age": 42 }
-{ "id" : 3, "name": "Dr Brown", "address": "1640 Riverside Drive", "age": 112 }
+{ "id" : 3, "name": "Clark Kent", "address": "344 Clinton Street, Apartment 3D", "age": 24 }
 { "id" : 4, "name": "Buffy Summers", "address": "1630 Revello Drive", "age": 27 }
 { "id" : 5, "name": "Norm", "address": "84 Beacon Street", "age": 40 }
 { "id" : 6, "name": "Spongebob Squarepants", "address": "124 Conch Street", "age": 34 }

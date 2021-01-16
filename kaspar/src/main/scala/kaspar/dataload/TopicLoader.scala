@@ -3,6 +3,8 @@ package kaspar.dataload
 import java.io.{File, FilenameFilter, IOException}
 import java.nio.ByteBuffer
 import java.util.{Collections, Properties}
+import java.nio.file.{Paths, Files}
+import java.nio.charset.StandardCharsets
 
 import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
@@ -63,6 +65,57 @@ object TopicLoader {
                           rowPredicates: Array[(RawRow)=> Boolean] = Array(),
                           segmentPredicates: Array[(Seq[File],String,Int,String) => Boolean] = Array()) : RDD[RawRow] = {
 
+    val taskAssignments = getTaskAssignments(clientProps,topicName)
+
+    val rawData: RDD[RawRow] = sc.makeRDD(taskAssignments).flatMap((taskAssignment: TaskAssignment) => {
+      val hosts = taskAssignment.locations.map(l => l.host)
+      val actualHost = java.net.InetAddress.getLocalHost().getHostName()
+      if (!hosts.contains(actualHost)) throw new RuntimeException("Ignore this, Spark scheduled this task " +
+        "on the wrong broker. Expected: " + hosts.mkString(",") + " actual: " + actualHost + ". \n" + "You should " +
+        "have blacklisting configurations that mean this will be rescheduled on a different node\n")
+      val dataDirs = taskAssignment.locations.filter(l => l.host == actualHost)(0).dataDirs
+      getRecords(topicName, taskAssignment.partitionId, columnifier, dataDirs, rowPredicates, segmentPredicates).iterator
+    })
+    rawData
+  }
+
+  def createIndex(sc: SparkContext, topicName: String,
+                          clientProps: Properties, columnifier: Columnifier,
+                          indexName: String,
+                          indexFunction: Seq[RawRow] => String) : RDD[(String,String,Boolean)] = {
+
+    val taskAssignments = getTaskAssignments(clientProps,topicName)
+
+    // task assignments are one task for each partition but we need one task for each replica
+    // this makes index creation EXPENSIVE!
+    val perReplicaAssignments = taskAssignments.flatMap(task  => {
+      val assignment = task._1
+      assignment.locations.map(location => (TaskAssignment(assignment.partitionId,Seq(location)) -> Seq(location.host)))
+    })
+
+    val indexesCreated = sc.makeRDD(perReplicaAssignments).flatMap((taskAssignment: TaskAssignment) => {
+      val hosts = taskAssignment.locations.map(l => l.host)
+      val actualHost = java.net.InetAddress.getLocalHost().getHostName()
+      if (!hosts.contains(actualHost)) {
+        Seq((actualHost,"partition: " + taskAssignment.partitionId, false))
+      } else {
+        val dataDirs = taskAssignment.locations.filter(l => l.host == actualHost)(0).dataDirs
+        val segments = getSegments(dataDirs, topicName, taskAssignment.partitionId)
+        segments.map(segment => {
+          if( segment.length() > 0 ) {
+            val segmentRecords = getSegmentRecords(segment, taskAssignment.partitionId, columnifier, Seq.empty)
+            // indexfunction returns  what to write to the index file
+            val indexData = indexFunction(segmentRecords)
+            Files.write(Paths.get(segment.getAbsolutePath().dropRight(3) + indexName), indexData.getBytes(StandardCharsets.UTF_8))
+          }
+          (actualHost, "partition: " + taskAssignment.partitionId + " segment: " + segment.getAbsolutePath(), true)
+        })
+      }
+    })
+    indexesCreated
+  }
+  
+  private def getTaskAssignments(clientProps: Properties, topicName: String): Seq[(TaskAssignment, Seq[String])] = {
     val adminClient: AdminClient = AdminClient.create(clientProps)
 
     // get datadirs for all brokers, these will form part of the task assignments
@@ -74,27 +127,37 @@ object TopicLoader {
       val locations = partition.isr().asScala.map(i => Location(i.host(),i.id(),brokerDirMappings(i.id())))
       (TaskAssignment(partition.partition(),locations) -> locations.map(i => i.host))
     })
-
-
-    val rawData: RDD[RawRow] = sc.makeRDD(taskAssignments).flatMap((taskAssignment: TaskAssignment) => {
-      val hosts = taskAssignment.locations.map(l => l.host)
-      val actualHost = java.net.InetAddress.getLocalHost().getHostName()
-      if (!hosts.contains(actualHost)) throw new RuntimeException("Ignore this, Spark scheduled this task " +
-        "on the wrong broker. Expected: " + hosts.mkString(",") + " actual: " + actualHost + ". \n" + "You should " +
-        "have blacklisting configurations that mean this will be rescheduled on a different node\n")
-      val dataDirs = taskAssignment.locations.filter(l => l.host == actualHost)(0).dataDirs
-      getFileRecords(topicName, taskAssignment.partitionId, columnifier, dataDirs, rowPredicates, segmentPredicates).iterator
-    })
-    rawData
+    taskAssignments
   }
 
   @throws[IOException]
-  private def getFileRecords(topicName: String, partition: Int,
+  private def getRecords(topicName: String, partition: Int,
                              columnifier: Columnifier,
                              dataDirs: Seq[String],
                              rowPredicates: Seq[(RawRow) => Boolean],
                              segmentPredicates: Seq[(Seq[File],String,Int,String) => Boolean]): Seq[RawRow] = {
 
+    val partitionFiles = getSegments(dataDirs,topicName,partition)
+
+    partitionFiles.flatMap(segmentFile => {
+
+      // check for segment predicate
+      if(segmentPredicates.forall(predicate =>
+        predicate(partitionFiles,topicName,partition,segmentFile.getPath())
+      )) {
+        getSegmentRecords(segmentFile,partition,columnifier,rowPredicates)
+      } else {
+        Array[RawRow]()
+      }
+    })
+  }
+
+  private def getSegmentRecords(segmentFile: File, partition: Int, columnifier: Columnifier, rowPredicates: Seq[RawRow => Boolean]): Seq[RawRow] = {
+    val records: FileRecords = FileRecords.open(segmentFile)
+    rowsFromRecords(records,partition,columnifier,rowPredicates)
+  }
+
+  private def getSegments(dataDirs: Seq[String], topicName: String, partition: Int) =  {
     val partitionFiles = dataDirs.flatMap(dataDir => {
       val foundFiles = new File(dataDir + "/" + topicName + "-" + partition).listFiles(
         new FilenameFilter {
@@ -107,20 +170,7 @@ object TopicLoader {
         foundFiles
       }
     })
-
-    partitionFiles.flatMap(segmentFile => {
-
-      // check for segment predicate
-      if(segmentPredicates.forall(predicate =>
-        predicate(partitionFiles,topicName,partition,segmentFile.getPath())
-      )) {
-
-        val records: FileRecords = FileRecords.open(segmentFile)
-        rowsFromRecords(records,partition,columnifier,rowPredicates)
-      } else {
-        Array[RawRow]()
-      }
-    })
+    partitionFiles
   }
 
   @throws[IOException]

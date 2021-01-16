@@ -1,6 +1,6 @@
 # Applying predicates to loaded messages
 
-This demo loads a single topic with various predicates applied at both a row and segment level
+This demo loads a single topic with predicates applied at a row level
 
 ## Setup
 
@@ -16,15 +16,6 @@ from within the master container run:
 /home/ubuntu/bin/setup.sh
 
 ```
-
-to populate the topics.
-from outside the docker environment run:
-
-```
-./make_index.sh
-```
-
-This populates index files alongside the segment files for the Customers topic. Eventually this will be done automatically.
 
 ## Running
 
