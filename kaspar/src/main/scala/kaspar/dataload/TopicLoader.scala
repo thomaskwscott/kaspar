@@ -100,13 +100,16 @@ object TopicLoader {
         Seq((actualHost,"partition: " + taskAssignment.partitionId, false))
       } else {
         val dataDirs = taskAssignment.locations.filter(l => l.host == actualHost)(0).dataDirs
-        val segments = getSegments(dataDirs, topicName, taskAssignment.partitionId)
+        // remove the latest segment as we will never index this because it could be being written to
+        val segments = getSegments(dataDirs, topicName, taskAssignment.partitionId).sorted.dropRight(1)
         segments.map(segment => {
-          if( segment.length() > 0 ) {
+          // the segment has data and there isn't a pre-existing index
+          val indexPath = Paths.get(segment.getAbsolutePath().dropRight(3) + indexName)
+          if( segment.length() > 0 && !Files.exists(indexPath)) {
             val segmentRecords = getSegmentRecords(segment, taskAssignment.partitionId, columnifier, Seq.empty)
-            // indexfunction returns  what to write to the index file
+            // indexFunction returns  what to write to the index file
             val indexData = indexFunction(segmentRecords)
-            Files.write(Paths.get(segment.getAbsolutePath().dropRight(3) + indexName), indexData.getBytes(StandardCharsets.UTF_8))
+            Files.write(indexPath, indexData.getBytes(StandardCharsets.UTF_8))
           }
           (actualHost, "partition: " + taskAssignment.partitionId + " segment: " + segment.getAbsolutePath(), true)
         })

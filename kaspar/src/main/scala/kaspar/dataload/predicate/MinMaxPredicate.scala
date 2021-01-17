@@ -5,8 +5,7 @@ import java.nio.file.{Paths, Files}
 
 import kaspar.dataload.metadata.ColumnType
 import kaspar.dataload.metadata.ColumnType.ColumnType
-import kaspar.dataload.structure.{Columnifier, RawRow}
-import org.apache.spark.sql.types.DataTypes
+import kaspar.dataload.structure.RawRow
 
 import scala.io.Source
 
