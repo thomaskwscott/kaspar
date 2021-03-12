@@ -1,5 +1,7 @@
 /kaspar/target/
 /.idea/
+/kaspar_server/.idea/
+/kaspar_server/target/
 /bin/spark-warehouse/
 /docker/resources/spark*
 /bin/derby.log

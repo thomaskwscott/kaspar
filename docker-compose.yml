@@ -2,7 +2,7 @@ version: "2.3"
 services:
 
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.4.1
+    image: confluentinc/cp-zookeeper:5.5.1
     restart: always
     hostname: zookeeper
     container_name: zookeeper
@@ -114,47 +114,62 @@ services:
     volumes:
       - ./serviceConfig/spark-defaults.conf:/usr/local/spark/conf/spark-defaults.conf
       - ./kaspar:/home/ubuntu/kaspar
+      - ./kaspar_server:/home/ubuntu/kaspar_server
       - ./bin:/home/ubuntu/bin
       - ./resources:/home/ubuntu/resources
 
-  # extra cluster for cross cluster demo
-  alt-zookeeper:
-    image: confluentinc/cp-zookeeper:5.4.1
-    restart: always
-    hostname: alt-zookeeper
-    container_name: alt-zookeeper
-    ports:
-      - 2182:2182
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2182
-      ZOOKEEPER_TICK_TIME: 2000
-
-  alt-worker1:
-    image: kaspar-worker:1.0
-    hostname: alt-worker1
-    container_name: alt-worker1
+  metastore:
+    image: mysql:latest
+    hostname: metastore
+    container_name: metastore
     cpus: 0.7
-    depends_on:
-      - alt-zookeeper
-      - master
-    ports:
-      - 10091:10091
-      - 10081:10081
-    volumes:
-      - ./serviceConfig/spark-defaults.conf:/usr/local/spark/conf/spark-defaults.conf
     environment:
-      KAFKA_ZOOKEEPER_CONNECT: alt-zookeeper:2182
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CLEAR:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: CLEAR
-      KAFKA_ADVERTISED_LISTENERS: CLEAR://alt-worker1:10091
-      KAFKA_LOG4J_LOGGERS: "kafka.authorizer.logger=INFO"
-      KAFKA_LOG4J_ROOT_LOGLEVEL: INFO
-      KAFKA_BROKER_ID: 1
-      KAFKA_BROKER_RACK: "r1"
-      KAFKA_JMX_PORT: 9991
-      KAFKA_DELETE_TOPIC_ENABLE: 'true'
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
-      KAFKA_LOG_DIRS: '/var/lib/kafka/data,/var/lib/kafka/data2'
-      SPARK_WORKER_WEBUI_PORT: 10081
-      SPARK_LOCAL_HOSTNAME: "alt-worker1"
-      SPARK_MASTER_URL: "spark://master:7077"
+      MYSQL_ROOT_PASSWORD: password1;-)
+      MYSQL_USER: kaspar
+      MYSQL_PASSWORD: kaspar
+      MYSQL_DATABASE: kaspar
+      MYSQL_ROOT_HOST: '%'
+    ports:
+      - 3306:3306
+
+#  # extra cluster for cross cluster demo
+#  alt-zookeeper:
+#    image: confluentinc/cp-zookeeper:5.5.1
+#    restart: always
+#    hostname: alt-zookeeper
+#    container_name: alt-zookeeper
+#    ports:
+#      - 2182:2182
+#    environment:
+#      ZOOKEEPER_CLIENT_PORT: 2182
+#      ZOOKEEPER_TICK_TIME: 2000
+#
+#  alt-worker1:
+#    image: kaspar-worker:1.0
+#    hostname: alt-worker1
+#    container_name: alt-worker1
+#    cpus: 0.7
+#    depends_on:
+#      - alt-zookeeper
+#      - master
+#    ports:
+#      - 10091:10091
+#      - 10081:10081
+#    volumes:
+#      - ./serviceConfig/spark-defaults.conf:/usr/local/spark/conf/spark-defaults.conf
+#    environment:
+#      KAFKA_ZOOKEEPER_CONNECT: alt-zookeeper:2182
+#      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CLEAR:PLAINTEXT
+#      KAFKA_INTER_BROKER_LISTENER_NAME: CLEAR
+#      KAFKA_ADVERTISED_LISTENERS: CLEAR://alt-worker1:10091
+#      KAFKA_LOG4J_LOGGERS: "kafka.authorizer.logger=INFO"
+#      KAFKA_LOG4J_ROOT_LOGLEVEL: INFO
+#      KAFKA_BROKER_ID: 1
+#      KAFKA_BROKER_RACK: "r1"
+#      KAFKA_JMX_PORT: 9991
+#      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+#      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+#      KAFKA_LOG_DIRS: '/var/lib/kafka/data,/var/lib/kafka/data2'
+#      SPARK_WORKER_WEBUI_PORT: 10081
+#      SPARK_LOCAL_HOSTNAME: "alt-worker1"
+#      SPARK_MASTER_URL: "spark://master:7077"
