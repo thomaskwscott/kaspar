@@ -1,5 +1,5 @@
 #./launchExecutable.sh kaspar.properties
-#curl -X POST localhost:8888/query --data-binary @/home/ubuntu/kaspar_executable/src/main/resources/test_statement.sql
+#curl -X POST localhost:8888/query --data-binary @/home/ubuntu/kaspar_server/src/main/resources/test_statement.sql
 /usr/local/spark/bin/spark-submit --master "spark://master:7077" \
 --num-executors 9 \
 --executor-cores 1 \

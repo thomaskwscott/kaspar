@@ -3,13 +3,23 @@ package kaspar.frontend
 import kaspar.dataload.TopicLoader
 import kaspar.dataload.metadata.ColumnType
 import kaspar.dataload.structure.SimpleJsonValueColumnifier
+import kaspar.frontend.metastore.MetastoreDao
+import kaspar.frontend.model.QueryStatus
 import org.apache.spark.sql
 import org.apache.spark.sql.{SQLContext, SaveMode, SparkSession}
 
-import java.util.Properties
+import java.util.{Properties, UUID}
+import java.util.concurrent.{CompletableFuture, ExecutorService, Executors}
+import scala.concurrent
+import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
+import scala.util.{Failure, Success}
 
-class KasparRunner (val clientProperties: Properties) {
+class KasparRunner (val clientProperties: Properties,
+                    val metastoreDao: MetastoreDao) {
+
+  val executorPool: ExecutorService = Executors.newFixedThreadPool(
+    clientProperties.getProperty(KasparServerConfig.RUNNER_POOL_SIZE).toInt)
 
   val spark = SparkSession
     .builder()
@@ -19,7 +29,24 @@ class KasparRunner (val clientProperties: Properties) {
   val sc = spark.sparkContext
   val sqlContext = new SQLContext(sc)
 
-  def runStatement(statement: _root_.scala.Predef.String): sql.DataFrame =  {
+  def scheduleStatement(statement: String, queryId: String): Unit = {
+    metastoreDao.setQueryStatus(queryId,QueryStatus.RUNNING)
+    Future {
+      val resultDf = runStatement(statement)
+      resultDf.write.mode(SaveMode.Overwrite).jdbc(
+        clientProperties.getProperty(KasparServerConfig.METASTORE_JDBC_URL_CONFIG),
+        queryId + "_result",
+        new Properties()
+      )
+    } (ExecutionContext.fromExecutor(executorPool)).onComplete {
+      case Success(x) => {
+        metastoreDao.setQueryStatus(queryId, QueryStatus.COMPLETE)
+      }
+      case Failure(e) => e.printStackTrace
+    }(ExecutionContext.fromExecutor(executorPool))
+  }
+
+  def runStatement(statement: String): sql.DataFrame =  {
     val parsedStatement = parseStatement(statement)
 
     parsedStatement._1.foreach(tableDef => {

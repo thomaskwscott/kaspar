@@ -1,7 +1,7 @@
 package kaspar.frontend.metastore
 
 import com.jolbox.bonecp.{BoneCP, BoneCPConfig}
-import kaspar.frontend.KasparExecutableConfig
+import kaspar.frontend.KasparServerConfig
 import org.slf4j.LoggerFactory
 
 import java.sql.Connection
@@ -15,10 +15,10 @@ abstract class ConnectionPool{
 object ConnectionPool {
 
   def apply(clientProperties: Properties): ConnectionPool = {
-    val className = clientProperties.getProperty(KasparExecutableConfig.METASTORE_JDBC_CLASS_CONFIG)
-    val jdbcUrl = clientProperties.getProperty(KasparExecutableConfig.METASTORE_JDBC_URL_CONFIG)
-    val poolMinSize = clientProperties.getProperty(KasparExecutableConfig.METASTORE_JDBC_POOL_MIN_SIZE_CONFIG).toInt
-    val poolMaxSize = clientProperties.getProperty(KasparExecutableConfig.METASTORE_JDBC_POOL_MAX_SIZE_CONFIG).toInt
+    val className = clientProperties.getProperty(KasparServerConfig.METASTORE_JDBC_CLASS_CONFIG)
+    val jdbcUrl = clientProperties.getProperty(KasparServerConfig.METASTORE_JDBC_URL_CONFIG)
+    val poolMinSize = clientProperties.getProperty(KasparServerConfig.METASTORE_JDBC_POOL_MIN_SIZE_CONFIG).toInt
+    val poolMaxSize = clientProperties.getProperty(KasparServerConfig.METASTORE_JDBC_POOL_MAX_SIZE_CONFIG).toInt
     new SimpleConnectionPool(className,jdbcUrl,poolMinSize,poolMaxSize)
   }
 

@@ -13,19 +13,20 @@ import scala.io.StdIn
 
 
 
-class RestMain(kasparRunner: KasparRunner, clientProperties: Properties) {
+class RestMain(clientProperties: Properties) {
 
   implicit val system = ActorSystem(Behaviors.empty, "kaspar-system")
   // needed for the future flatMap/onComplete in the end
   implicit val executionContext = system.executionContext
 
   val metastoreDao = new MetastoreDao(ConnectionPool(clientProperties))
+  val kasparRunner = new KasparRunner(clientProperties,metastoreDao)
 
-  val metastoreUrl = clientProperties.getProperty(KasparExecutableConfig.METASTORE_JDBC_URL_CONFIG)
+  val metastoreUrl = clientProperties.getProperty(KasparServerConfig.METASTORE_JDBC_URL_CONFIG)
   val route =
     concat(
       new VersionPath().getPath(),
-      new QueryPath(kasparRunner,metastoreUrl).getPath(),
+      new QueryPath(kasparRunner,metastoreUrl,metastoreDao).getPath(),
       new ResultPath(metastoreDao).getPath()
     )
 
@@ -64,7 +65,7 @@ object RestMain {
     val options = nextOption(Map(),args.toList)
     val clientProps = new Properties()
     clientProps.load(new FileInputStream(options.get("configFilePath").get))
-    val restMain = new RestMain(new KasparRunner(clientProps),clientProps)
+    val restMain = new RestMain(clientProps)
     restMain.start()
   }
 }

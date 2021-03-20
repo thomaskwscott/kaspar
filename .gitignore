@@ -8,7 +8,7 @@
 /bin/producer.properties
 /bin/metastore_db/
 /kaspar/.idea/
-/kaspar/*.iml
+*.iml
 /kaspar/dependency-reduced-pom.xml
 *.DS_Store
 aws_keys.sh
