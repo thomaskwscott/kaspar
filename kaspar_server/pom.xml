@@ -19,6 +19,13 @@
             <name>Scala-tools Maven2 Repository</name>
             <url>http://scala-tools.org/repo-releases</url>
         </repository>
+        <repository>
+            <id>jsqlparser-snapshots</id>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <url>https://oss.sonatype.org/content/groups/public/</url>
+        </repository>
     </repositories>
 
     <pluginRepositories>
@@ -151,6 +158,11 @@
             <groupId>com.lihaoyi</groupId>
             <artifactId>upickle_2.12</artifactId>
             <version>1.3.7</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.jsqlparser</groupId>
+            <artifactId>jsqlparser</artifactId>
+            <version>4.0</version>
         </dependency>
 
         <!-- kaspar dependency -->

@@ -5,7 +5,7 @@ import akka.http.scaladsl.server
 import akka.http.scaladsl.server.Directives
 import akka.http.scaladsl.server.Directives.{_symbol2NR, complete, delete, get, parameters, path}
 import kaspar.frontend.metastore.MetastoreDao
-import kaspar.frontend.model.{ColumnResponse, ListResultsResponse, ResultResponse, ResultSetResponse, RowResponse, SubmitQueryResponse}
+import kaspar.frontend.model.{GetColumnResponse, ConversionUtils, GetResultResponseList, QueryResultSpecList, GetResultResponse, RowSpecList, GetRowResponseList, GetRowResponse, PostQueryResponse}
 
 case class KasparQuery(id: String)
 
@@ -14,11 +14,11 @@ class ResultPath(val metastoreDao: MetastoreDao) extends Path {
   val name = "result"
 
   // macros for mapping json requests/responses
-  implicit val columnResponseW = upickle.default.macroW[ColumnResponse]
-  implicit val rowResponseW = upickle.default.macroW[RowResponse]
-  implicit val resultSetResponseW = upickle.default.macroW[ResultSetResponse]
-  implicit val resultResponseW = upickle.default.macroW[ResultResponse]
-  implicit val listResultsResponseW = upickle.default.macroW[ListResultsResponse]
+  implicit val columnResponseW = upickle.default.macroW[GetColumnResponse]
+  implicit val rowResponseW = upickle.default.macroW[GetRowResponse]
+  implicit val resultSetResponseW = upickle.default.macroW[GetRowResponseList]
+  implicit val resultResponseW = upickle.default.macroW[GetResultResponse]
+  implicit val listResultsResponseW = upickle.default.macroW[GetResultResponseList]
 
   override def getPath(): server.Route = {
     path(name) {
@@ -28,17 +28,17 @@ class ResultPath(val metastoreDao: MetastoreDao) extends Path {
             queryId => {
               queryId match {
                 case Some(queryId) => {
-                  val results = metastoreDao.getQueryResult(queryId).getOrElse(ResultSetResponse(List.empty))
+                  val results = metastoreDao.getQueryResult(queryId).getOrElse(RowSpecList(List.empty))
                   complete(
                     HttpEntity(ContentTypes.`application/json`,
-                      upickle.default.write(results)
+                      upickle.default.write(ConversionUtils.convert(results))
                     ))
                 }
                 case _ => {
-                  val results = metastoreDao.getResults().getOrElse(ListResultsResponse(List.empty))
+                  val results = metastoreDao.getResults().getOrElse(QueryResultSpecList(List.empty))
                   complete(
                     HttpEntity(ContentTypes.`application/json`,
-                      upickle.default.write(results)
+                      upickle.default.write(ConversionUtils.convert(results))
                     ))
                 }
               }

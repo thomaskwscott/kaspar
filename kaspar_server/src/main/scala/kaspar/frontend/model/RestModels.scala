@@ -1,17 +1,25 @@
 package kaspar.frontend.model
 
-case class SubmitQueryResponse(queryId: String)
+case class PostQueryResponse(queryId: String)
 
-case class QueryStatusResponse(queryId: String, status: String)
+case class GetQueryStatusResponse(queryId: String, status: String)
 
-case class QueryStatusResponses(statuses: List[QueryStatusResponse])
+case class GetQueryStatusResponseList(getQueryStatusResponses: List[GetQueryStatusResponse])
 
-case class ResultSetResponse(rows: List[RowResponse])
+case class GetRowResponseList(getRowResponses: List[GetRowResponse])
 
-case class RowResponse(columns: List[ColumnResponse])
+case class GetRowResponse(getColumnResponses: List[GetColumnResponse])
 
-case class ColumnResponse(name: String, value: String)
+case class GetColumnResponse(name: String, value: String)
 
-case class ListResultsResponse(results: List[ResultResponse])
+case class GetResultResponseList(getResultResponses: List[GetResultResponse])
 
-case class ResultResponse(queryId: String)
+case class GetResultResponse(queryId: String)
+
+case class PostColumnSpecResponse(columnId: Int)
+
+case class GetColumnSpecResponse(columnId: Int, columnName: String, tableName: String, columnType: String)
+
+case class GetColumnSpecsResponseList(getColumnSpecResponses: List[GetColumnSpecResponse])
+
+case class PostColumnSpecRequest(columnName: String, tableName: String, columnType: String)

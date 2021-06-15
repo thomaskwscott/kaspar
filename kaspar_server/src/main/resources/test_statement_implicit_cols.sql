@@ -1,0 +1,1 @@
+SELECT * from Customers_json

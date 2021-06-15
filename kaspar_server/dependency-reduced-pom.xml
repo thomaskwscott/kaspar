@@ -78,6 +78,11 @@
       <name>Scala-tools Maven2 Repository</name>
       <url>http://scala-tools.org/repo-releases</url>
     </repository>
+    <repository>
+      <snapshots />
+      <id>jsqlparser-snapshots</id>
+      <url>https://oss.sonatype.org/content/groups/public/</url>
+    </repository>
   </repositories>
   <pluginRepositories>
     <pluginRepository>

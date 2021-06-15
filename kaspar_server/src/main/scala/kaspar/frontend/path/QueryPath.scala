@@ -5,7 +5,7 @@ import akka.http.scaladsl.server.Directives.{_symbol2NR, as, complete, entity, p
 import akka.http.scaladsl.server.{Directives, Route}
 import kaspar.frontend.KasparRunner
 import kaspar.frontend.metastore.MetastoreDao
-import kaspar.frontend.model.{QueryStatus, QueryStatusResponse, QueryStatusResponses, SubmitQueryResponse}
+import kaspar.frontend.model.{ConversionUtils, QueryStatus, GetQueryStatusResponse, GetQueryStatusResponseList, QueryStatusSpecList, PostQueryResponse}
 
 import java.util.UUID
 
@@ -20,9 +20,9 @@ class QueryPath(
   val name = "query"
 
   // macros for mapping json requests/responses
-  implicit val submitQueryResponseW = upickle.default.macroW[SubmitQueryResponse]
-  implicit val queryStatusResponseW = upickle.default.macroW[QueryStatusResponse]
-  implicit val queryStatusResponsesW = upickle.default.macroW[QueryStatusResponses]
+  implicit val submitQueryResponseW = upickle.default.macroW[PostQueryResponse]
+  implicit val queryStatusResponseW = upickle.default.macroW[GetQueryStatusResponse]
+  implicit val queryStatusResponsesW = upickle.default.macroW[GetQueryStatusResponseList]
 
   override def getPath(): Route = {
     path(name) {
@@ -31,7 +31,7 @@ class QueryPath(
           val queryId = UUID.randomUUID().toString.replaceAll("-","_")
           kasparRunner.scheduleStatement(statement,queryId)
           complete(HttpEntity(ContentTypes.`application/json`,
-            upickle.default.write(SubmitQueryResponse(queryId))
+            upickle.default.write(PostQueryResponse(queryId))
           ))
         }
       },
@@ -42,13 +42,13 @@ class QueryPath(
                 case Some(queryId) => {
                   val status = metastoreDao.getQueryStatus(queryId).getOrElse(QueryStatus.DOES_NOT_EXIST)
                   complete(HttpEntity(ContentTypes.`application/json`,
-                    upickle.default.write(QueryStatusResponse(queryId,status.toString))
+                    upickle.default.write(GetQueryStatusResponse(queryId,status.toString))
                   ))
                 }
                 case _ => {
-                  val result = metastoreDao.getAllQueryStatuses().getOrElse(QueryStatusResponses(List.empty))
+                  val result = metastoreDao.getAllQueryStatuses().getOrElse(QueryStatusSpecList(List.empty))
                   complete(HttpEntity(ContentTypes.`application/json`,
-                    upickle.default.write(result)
+                    upickle.default.write(ConversionUtils.convert(result))
                   ))
                 }
               }
