@@ -1,8 +1,11 @@
 package kaspar.frontend
 
-import kaspar.dataload.TopicLoader
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.jayway.jsonpath.JsonPath
+import kaspar.dataload.KasparDriverBuilder
 import kaspar.dataload.metadata.ColumnType
-import kaspar.dataload.structure.{PathJsonValueColumnifier, SimpleJsonValueColumnifier}
+import kaspar.dataload.predicate.PredicateGenerator
+import kaspar.dataload.structure.{RawRow, RowDeserializer}
 import kaspar.frontend.metastore.MetastoreDao
 import kaspar.frontend.model.QueryStatus
 import net.sf.jsqlparser.parser.CCJSqlParserUtil
@@ -11,8 +14,10 @@ import net.sf.jsqlparser.util.TablesNamesFinder
 import org.apache.spark.sql
 import org.apache.spark.sql.{SQLContext, SaveMode, SparkSession}
 
+import java.io.File
 import java.util.Properties
 import java.util.concurrent.{ExecutorService, Executors}
+import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success}
@@ -51,47 +56,95 @@ class KasparRunner (val clientProperties: Properties,
   def runStatement(statement: String): sql.DataFrame =  {
     val parsedStatement = parseStatement(statement)
 
-    parsedStatement._1.foreach(tableDef => {
-      val tableName = tableDef._1
-      val tableCols = tableDef._2
+    parsedStatement._1.foreach(tableName => {
 
-      val tableColumnifier = new SimpleJsonValueColumnifier(tableCols)
-      //val tableColumnifier = new PathJsonValueColumnifier(tableCols)
+    /*
+      Example tableSpec:
+      {
+        "deserializerClass": "kaspar.dataload.structure.PathJsonValueRowDeserializer",
+        "config": {
+          "columns" : [
+            {
+              "name": "someCol",
+              "type": "LONG",
+              "path": "$.someCol"
+            }
+          ]
+        },
+        "predicates": [
+          {
+            "generatorClass": "kaspar.dataload.predicate.OffsetPredicateGenerator",
+            "type": "SEGMENT",
+            "config": {
+              "predicateType": "GreaterThan"
+              "partitionThresholds" : [
+                { "partition": 0, "threshold": 10 },
+                { "partition": 1, "threshold": 20 }
+              ]
+            }
+          }
+        ]
+      }
+    */
 
-      val tableRawRows = TopicLoader.getRawRowsFromKafka(sc,tableName,clientProperties,tableColumnifier)
-      TopicLoader.registerTableFromRdd(sqlContext,tableRawRows,tableName,tableCols)
+      val objectMapper = new ObjectMapper()
+      val tableSpec = objectMapper.readTree(metastoreDao.getTable(tableName).get.tableSpec)
+
+      val tableDeserializerClass = Class.forName(tableSpec.get("deserializerClass").asText())
+      val tableDeserializer = tableDeserializerClass.newInstance().asInstanceOf[RowDeserializer]
+      val tableConfig  = tableSpec.get("config");
+      val deserializerConfig = objectMapper.writeValueAsString(tableConfig)
+      tableDeserializer.configure(deserializerConfig)
+
+      val columnsArrayNode = tableConfig.get("columns")
+      val tableCols = columnsArrayNode.asScala.map( columnNode => {
+        val columnName = columnNode.get("name").asText()
+        val columnType = ColumnType.withName(columnNode.get("type").asText())
+        (columnName, columnType)
+      }).toSeq
+
+      val predicatesArrayNode = tableSpec.get("predicates")
+      val rowPredicates = new mutable.ListBuffer[(RawRow => Boolean)]
+      val segmentPredicates = new mutable.ListBuffer[((Seq[File], String, Int, String) => Boolean)]
+
+      predicatesArrayNode.forEach( predicateNode => {
+        val generatorClass = Class.forName(predicateNode.get("generatorClass").asText())
+        val predicateType = predicateNode.get("type").asText()
+        val predicateConfig = objectMapper.writeValueAsString(predicateNode.get("config"))
+        val generator = generatorClass.newInstance().asInstanceOf[PredicateGenerator]
+        if (predicateType == "SEGMENT") {
+          segmentPredicates += generator.segmentPredicateFromJson(predicateConfig)
+        } else {
+          rowPredicates += generator.rowPredicateFromJson(predicateConfig)
+        }
+      })
+
+      val kasparDriver = KasparDriverBuilder()
+        .withClientProperties(clientProperties)
+        .build()
+
+      val tableRawRows = kasparDriver.getRows(
+        sc,
+        tableName,
+        tableDeserializer,
+        rowPredicates.toArray,
+        segmentPredicates.toArray
+      )
+      kasparDriver.registerTable(sqlContext,tableRawRows,tableName,tableCols)
     })
 
     sqlContext.sql(parsedStatement._2)
   }
 
-  def parseStatement(statement: String): (Map[String,Array[(String,ColumnType.Value)]],String) = {
-
-    val lines = statement.split("\n").groupBy(line => line.startsWith("# col: "))
-    val sql = lines(false).mkString
-    if(lines.contains(true)) {
-      val explicitCols = lines(true).map(line => {
-        val columnParts = line.drop(7).split(" ")
-        val columnType = ColumnType.withName(columnParts(1))
-        val tableName = columnParts(0).split("\\.")(0)
-        val columnName = columnParts(0).split("\\.")(1)
-        (tableName, columnName, columnType)
-      }).groupBy(e => e._1).mapValues(cols => cols.map(nameType => (nameType._2, nameType._3)))
-      (explicitCols, sql)
-    } else {
-      val cols = getImplicitColumns(statement);
-      println(cols)
-      (getImplicitColumns(statement), sql)
-    }
+  def parseStatement(statement: String): (Seq[String],String) = {
+    val tables = getTables(statement);
+    (tables, statement)
   }
 
-  def getImplicitColumns(statement: String): Map[String,Array[(String,ColumnType.Value)]] = {
+  def getTables(statement: String): Seq[String] = {
     val parsedStatement = CCJSqlParserUtil.parse(statement)
     val selectStatement = parsedStatement.asInstanceOf[Select]
     val tablesNamesFinder = new TablesNamesFinder
-    tablesNamesFinder.getTableList(selectStatement).asScala.flatMap(tableName => {
-      metastoreDao.getTableColumns(tableName).get.columnSpecs.map(
-        spec => (spec.tableName, spec.columnName,ColumnType.withName(spec.columnType.toString)))
-    }).groupBy(e => e._1).mapValues(cols => cols.map(nameType => (nameType._2,nameType._3)).toArray)
+    tablesNamesFinder.getTableList(selectStatement).asScala
   }
 }

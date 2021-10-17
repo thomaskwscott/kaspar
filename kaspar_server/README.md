@@ -23,29 +23,78 @@ The following apis exist right now:
 curl -X GET localhost:8888/version
 ```
 
-### Column API:
+### Table API:
 
 this manipulates columns in the metastore
 
-Create a column
+Create a table
 ```
-curl -X POST localhost:8888/column -d '{"columnName":"someColumn", "tableName":"someTable","columnType":"Integer"}'
+cat > Customers_json.spec << EOF      
+{
+    "tableName" : "Customers_json",
+    "tableSpec" : {
+       "deserializerClass": "kaspar.dataload.structure.PathJsonValueRowDeserializer",
+       "config": {
+            "columns" : [
+                {
+                    "name": "id",
+                    "type": "Integer",
+                    "path": "$.id"
+                },
+                {
+                    "name": "name",
+                    "type": "String",
+                    "path": "$.name"
+                },
+                {
+                    "name": "address",
+                    "type": "String",
+                    "path": "$.address"
+                },
+                {
+                    "name": "age",
+                    "type": "Integer",
+                    "path": "$.age"
+                }
+            ]
+        },
+        "predicates": [
+            {
+                "generatorClass": "kaspar.dataload.predicate.OffsetPredicateGenerator",
+                "type": "SEGMENT",
+                "config": {
+                    "predicateType": "GreaterThan",
+                    "partitionThresholds" : [
+                         { "partition": 0, "threshold": -1 },
+                         { "partition": 1, "threshold": -1 },
+                         { "partition": 2, "threshold": -1 },
+                         { "partition": 3, "threshold": -1 },
+                         { "partition": 4, "threshold": -1 },
+                         { "partition": 5, "threshold": -1 }
+                    ]
+                }
+            }
+        ]
+    }
+}
+EOF
+curl -X POST localhost:8888/table -d @Customers_json.spec
 ```
-Get all columns in a table
+Get all details for a table
 ```
-curl -X GET localhost:8888/column?tableName=someTable
+curl -X GET localhost:8888/table?tableName=Customers_json
 ```
-Get a specific column by id
+Get a specific table by id
 ```
-curl -X GET localhost:8888/column?columnId=1
+curl -X GET localhost:8888/table?tableId=1
 ```
-Get all columns
+Get all tables
 ```
-curl -X GET localhost:8888/column
+curl -X GET localhost:8888/table
 ```
-Delete a column
+Delete a table
 ```
-curl -X DELETE localhost:8888/column?columnId=1
+curl -X DELETE localhost:8888/table?tableId=1
 ```
 
 ### Query API:
@@ -54,7 +103,7 @@ this submits and monitors the status of queries
 
 Submit a query
 ```
-curl -X POST localhost:8888/query --data-binary @/home/ubuntu/kaspar_server/src/main/resources/test_statement_implicit_cols.sql
+curl -X POST localhost:8888/query --data-binary @/home/ubuntu/kaspar_server/src/main/resources/test_statement.sql
 curl -X POST localhost:8888/query -d 'SELECT * FROM Customers_json'
 ```
 Get the status of a particular query

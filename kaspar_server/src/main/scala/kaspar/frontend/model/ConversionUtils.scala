@@ -23,18 +23,17 @@ object ConversionUtils {
     )
   }
 
-  def convert(columnSpec: ColumnSpec): GetColumnSpecResponse = {
-    GetColumnSpecResponse(
-      columnSpec.columnId,
-      columnSpec.columnName,
-      columnSpec.tableName,
-      columnSpec.columnType.toString
+  def convert(tableSpec: TableSpec): GetTableSpecResponse = {
+    GetTableSpecResponse(
+      tableSpec.tableId,
+      tableSpec.tableName,
+      tableSpec.tableSpec
     )
   }
 
-  def convert(columns: ColumnSpecList): GetColumnSpecsResponseList = {
-    GetColumnSpecsResponseList(
-      columns.columnSpecs.map(columnSpec => convert(columnSpec))
+  def convert(tables: TableSpecList): GetTableSpecsResponseList = {
+    GetTableSpecsResponseList(
+      tables.tableSpecs.map(tableSpec => convert(tableSpec))
     )
   }
 }

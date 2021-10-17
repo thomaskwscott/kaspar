@@ -1,7 +1,6 @@
 package kaspar.frontend.metastore
 
-import kaspar.frontend.model.ColumnType.ColumnType
-import kaspar.frontend.model.{ColumnSpec, ColumnSpecList, ColumnType, ColumnValueSpec, GetColumnResponse, GetQueryStatusResponse, GetQueryStatusResponseList, GetResultResponse, GetResultResponseList, GetRowResponse, GetRowResponseList, QueryResultSpec, QueryResultSpecList, QueryStatus, QueryStatusSpec, QueryStatusSpecList, RowSpec, RowSpecList}
+import kaspar.frontend.model.{ColumnValueSpec, QueryResultSpec, QueryResultSpecList, QueryStatus, QueryStatusSpec, QueryStatusSpecList, RowSpec, RowSpecList, TableSpec, TableSpecList}
 import kaspar.frontend.model.QueryStatus.QueryStatus
 
 import scala.collection.mutable.ListBuffer
@@ -28,44 +27,42 @@ class MetastoreDao(val connectionPool: ConnectionPool
     |""".stripMargin
   val ALL_STATUS_STATEMENT = "SELECT query_id, status FROM query_status"
   val STATUS_STATEMENT = "SELECT status FROM query_status WHERE query_id = '%s'"
-  val ALL_COLUMNS_STATEMENT = "SELECT column_id, table_name, column_name, column_type FROM columns"
-  val COLUMN_STATEMENT = "SELECT column_id, table_name, column_name, column_type FROM columns WHERE column_id = %s"
+  val ALL_TABLES_STATEMENT = "SELECT table_id, table_name, table_spec FROM tables"
+  val TABLE_ID_STATEMENT = "SELECT table_id, table_name, table_spec FROM tables WHERE table_id = %s"
+  val TABLE_NAME_STATEMENT = "SELECT table_id, table_name, table_spec FROM tables WHERE table_name = '%s'"
   val DROP_RESULT_STATEMENT = "DROP TABLE %s_result"
   val LIST_RESULTS_STATEMENT= "SHOW TABLES LIKE '%_result'"
-  val COLUMN_TABLE_CREATE_STATEMENT = """
-                                        |CREATE TABLE IF NOT EXISTS columns (
-                                        |  column_id int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  val TABLES_TABLE_CREATE_STATEMENT = """
+                                        |CREATE TABLE IF NOT EXISTS tables (
+                                        |  table_id int NOT NULL AUTO_INCREMENT PRIMARY KEY,
                                         |  table_name VARCHAR(50),
-                                        |  column_name VARCHAR(50),
-                                        |  column_type VARCHAR(50)
+                                        |  table_spec VARCHAR(5000)
                                         |)
     """.stripMargin
-  val INSERT_COLUMN_STATEMENT = """
-                                  |INSERT INTO columns (
-                                  |  table_name, column_name, column_type
+  val INSERT_TABLE_STATEMENT = """
+                                  |INSERT INTO tables (
+                                  |  table_name, table_spec
                                   |) VALUES (
-                                  |'%s','%s','%s'
+                                  |'%s','%s'
                                   |)
                                   |""".stripMargin
-  val DELETE_COLUMN_STATEMENT = """
-                                  |DELETE FROM columns
-                                  |WHERE column_id = %s
+  val DELETE_TABLE_STATEMENT = """
+                                  |DELETE FROM tables
+                                  |WHERE table_id = %s
                                   |""".stripMargin
-  val TABLE_COLUMNS_STATEMENT = "SELECT column_id, table_name, column_name, column_type FROM columns WHERE table_name = '%s'"
 
   connectionPool.getConnection().map(conn => {
     conn.createStatement().executeUpdate(STATUS_TABLE_CREATE_STATEMENT)
-    conn.createStatement().executeUpdate(COLUMN_TABLE_CREATE_STATEMENT)
+    conn.createStatement().executeUpdate(TABLES_TABLE_CREATE_STATEMENT)
     conn.close()
   })
 
-  def createColumn(tableName: String, columnName: String, columnType: ColumnType): Option[Int] = {
+  def createTable(tableName: String, tableSpec: String): Option[Int] = {
     connectionPool.getConnection().map(conn => {
       conn.createStatement().executeUpdate(
-        INSERT_COLUMN_STATEMENT.format(
+        INSERT_TABLE_STATEMENT.format(
           tableName,
-          columnName,
-          columnType
+          tableSpec
         ))
       val result = conn.createStatement().executeQuery(LAST_ID_STATEMENT)
       result.next()
@@ -75,10 +72,10 @@ class MetastoreDao(val connectionPool: ConnectionPool
     })
   }
 
-  def deleteColumn(columnId: Int): Unit = {
+  def deleteTable(columnId: Int): Unit = {
     connectionPool.getConnection().map(conn => {
       conn.createStatement().executeUpdate(
-        DELETE_COLUMN_STATEMENT.format(
+        DELETE_TABLE_STATEMENT.format(
           columnId
         ))
       conn.close()
@@ -98,55 +95,50 @@ class MetastoreDao(val connectionPool: ConnectionPool
     })
   }
 
-  def getColumn(columnId: Int): Option[ColumnSpec] = {
+  def getTable(tableId: Int): Option[TableSpec] = {
     connectionPool.getConnection().map(conn => {
       val statement = conn.createStatement()
-      val result = statement.executeQuery(COLUMN_STATEMENT.format(columnId))
+      val result = statement.executeQuery(TABLE_ID_STATEMENT.format(tableId))
       result.next()
-      val columnSpec = ColumnSpec(
+      val tableSpec = TableSpec(
         result.getInt(1),
-        result.getString(3),
         result.getString(2),
-        ColumnType.withName(result.getString(4))
+        result.getString(3)
       )
       conn.close()
-      columnSpec
+      tableSpec
     })
   }
 
-  def getTableColumns(tableName: String): Option[ColumnSpecList] = {
+  def getTable(tableName: String): Option[TableSpec] = {
     connectionPool.getConnection().map(conn => {
       val statement = conn.createStatement()
-      val result = statement.executeQuery(TABLE_COLUMNS_STATEMENT.format(tableName))
-      val columnSpecs = new ListBuffer[ColumnSpec]()
-      while( result.next()) {
-        columnSpecs += ColumnSpec(
-          result.getInt(1),
-          result.getString(3),
-          result.getString(2),
-          ColumnType.withName(result.getString(4))
-        )
-      }
+      val result = statement.executeQuery(TABLE_NAME_STATEMENT.format(tableName))
+      result.next()
+      val tableSpec = TableSpec(
+        result.getInt(1),
+        result.getString(2),
+        result.getString(3)
+      )
       conn.close()
-      ColumnSpecList(columnSpecs.toList)
+      tableSpec
     })
   }
 
-  def getAllColumns(): Option[ColumnSpecList] = {
+  def getAllTables(): Option[TableSpecList] = {
     connectionPool.getConnection().map(conn => {
       val statement = conn.createStatement()
-      val result = statement.executeQuery(ALL_COLUMNS_STATEMENT)
-      val columnSpecs = new ListBuffer[ColumnSpec]()
+      val result = statement.executeQuery(ALL_TABLES_STATEMENT)
+      val tableSpecs = new ListBuffer[TableSpec]()
       while( result.next()) {
-        columnSpecs += ColumnSpec(
+        tableSpecs += TableSpec(
           result.getInt(1),
           result.getString(2),
-          result.getString(3),
-          ColumnType.withName(result.getString(4))
+          result.getString(3)
         )
       }
       conn.close()
-      ColumnSpecList(columnSpecs.toList)
+      TableSpecList(tableSpecs.toList)
     })
   }
 

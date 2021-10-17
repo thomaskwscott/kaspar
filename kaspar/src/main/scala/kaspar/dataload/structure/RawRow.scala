@@ -45,5 +45,5 @@ class RawRow extends Serializable {
     }
   }
 
-
+  override def toString = s"RawRow($rawVals)"
 }

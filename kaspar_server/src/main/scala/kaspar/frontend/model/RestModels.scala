@@ -16,10 +16,11 @@ case class GetResultResponseList(getResultResponses: List[GetResultResponse])
 
 case class GetResultResponse(queryId: String)
 
-case class PostColumnSpecResponse(columnId: Int)
+case class PostTableSpecResponse(tableId: Int)
 
-case class GetColumnSpecResponse(columnId: Int, columnName: String, tableName: String, columnType: String)
+case class GetTableSpecResponse(tableId: Int, tableName: String, tableSpec: String)
 
-case class GetColumnSpecsResponseList(getColumnSpecResponses: List[GetColumnSpecResponse])
+case class GetTableSpecsResponseList(getTableSpecResponses: List[GetTableSpecResponse])
 
-case class PostColumnSpecRequest(columnName: String, tableName: String, columnType: String)
+case class PostTableSpecRequest(tableName: String, tableSpec: String)
+

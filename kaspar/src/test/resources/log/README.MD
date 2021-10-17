@@ -1,0 +1,1 @@
+Nothing should go in this directory, it is used only for passing integration test results back to the host

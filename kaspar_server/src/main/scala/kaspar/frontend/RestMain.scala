@@ -5,7 +5,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
 import kaspar.frontend.metastore.{ConnectionPool, MetastoreDao}
-import kaspar.frontend.path.{ColumnPath, QueryPath, ResultPath, VersionPath}
+import kaspar.frontend.path.{QueryPath, ResultPath, TablePath, VersionPath}
 
 import java.io.FileInputStream
 import java.util.Properties
@@ -28,7 +28,7 @@ class RestMain(clientProperties: Properties) {
       new VersionPath().getPath(),
       new QueryPath(kasparRunner,metastoreUrl,metastoreDao).getPath(),
       new ResultPath(metastoreDao).getPath(),
-      new ColumnPath(metastoreDao).getPath()
+      new TablePath(metastoreDao).getPath()
     )
 
   val port = clientProperties.getProperty("rest.port").toInt

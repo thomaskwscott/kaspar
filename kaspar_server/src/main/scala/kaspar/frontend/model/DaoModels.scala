@@ -2,9 +2,9 @@ package kaspar.frontend.model
 
 import kaspar.frontend.model.ColumnType.ColumnType
 
-case class ColumnSpecList(columnSpecs: List[ColumnSpec])
+case class TableSpecList(tableSpecs: List[TableSpec])
 
-case class ColumnSpec(columnId: Int, columnName: String, tableName: String, columnType: ColumnType)
+case class TableSpec(tableId: Int, tableName: String, tableSpec: String)
 
 case class QueryStatusSpecList(queryStatusSpecs: List[QueryStatusSpec])
 
