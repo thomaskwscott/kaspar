@@ -1,0 +1,362 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Kaspar Row Deserializers &mdash; Kaspar 0.9.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+
+  
+  <script src="static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Kaspar
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="kaspar_core.html">Kaspar Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kaspar_server.html">Kaspar Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Kaspar</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Kaspar Row Deserializers</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="sources/kaspar_rowdeserializers.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="kaspar-row-deserializers">
+<span id="kaspar-rowdeserializers"></span><h1>Kaspar Row Deserializers<a class="headerlink" href="#kaspar-row-deserializers" title="Permalink to this headline">¶</a></h1>
+<p>Row Deserializers perform the conversion of Kafka messages from byte arrays to Row Structures.
+These all implement the RowDeserializer trait kaspar.dataload.structure.RowDeserializer and
+provide:</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="n">def</span> <span class="nf">configure</span><span class="o">(</span><span class="n">configuration</span><span class="o">:</span> <span class="n">String</span><span class="o">):</span> <span class="n">Unit</span>
+
+<span class="n">def</span> <span class="nf">toColumns</span><span class="o">(</span><span class="n">partition</span><span class="o">:</span> <span class="n">Int</span><span class="o">,</span> <span class="n">raw</span><span class="o">:</span> <span class="n">Record</span><span class="o">):</span><span class="n">Seq</span><span class="o">[</span><span class="n">Any</span><span class="o">]</span>
+</pre></div>
+</div>
+<p>To use deserializers, developers should create an instance and configure it with a
+configuration string (usually json). Kaspar will then use this internally to do the conversion.</p>
+<div class="section" id="existing-rowdeserializers">
+<h2>Existing RowDeserializers<a class="headerlink" href="#existing-rowdeserializers" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="csvrowdeserializer">
+<h3>CsvRowDeserializer<a class="headerlink" href="#csvrowdeserializer" title="Permalink to this headline">¶</a></h3>
+<p>Converts character separated (csv) data into rows.</p>
+<div class="section" id="example-configuration">
+<h4>Example configuration:<a class="headerlink" href="#example-configuration" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="o">{</span>
+  <span class="s">&quot;delimiter&quot;</span> <span class="o">:</span> <span class="s">&quot;,&quot;</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="example-input">
+<h4>Example input:<a class="headerlink" href="#example-input" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="n">val1</span><span class="o">,</span><span class="n">val2</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="becomes">
+<h4>Becomes:<a class="headerlink" href="#becomes" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="o">[</span><span class="s">&quot;val1&quot;</span><span class="o">,</span><span class="s">&quot;val2&quot;</span><span class="o">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="jsonkeyvaluerowdeserializer">
+<h3>JsonKeyValueRowDeserializer<a class="headerlink" href="#jsonkeyvaluerowdeserializer" title="Permalink to this headline">¶</a></h3>
+<p>Converts Json data from both the message key and value fields into row data.</p>
+<div class="section" id="id1">
+<h4>Example configuration:<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="o">{</span>
+  <span class="s">&quot;columns&quot;</span> <span class="o">:</span> <span class="o">[</span>
+    <span class="o">{</span>
+      <span class="s">&quot;name&quot;</span><span class="o">:</span> <span class="s">&quot;col1&quot;</span><span class="o">,</span>
+      <span class="s">&quot;type&quot;</span><span class="o">:</span> <span class="s">&quot;Integer&quot;</span><span class="o">,</span>
+      <span class="s">&quot;isKey&quot;</span><span class="o">:</span> <span class="kc">true</span>
+    <span class="o">},</span>
+    <span class="o">{</span>
+      <span class="s">&quot;name&quot;</span><span class="o">:</span> <span class="s">&quot;col2&quot;</span><span class="o">,</span>
+      <span class="s">&quot;type&quot;</span><span class="o">:</span> <span class="s">&quot;Integer&quot;</span><span class="o">,</span>
+      <span class="s">&quot;isKey&quot;</span><span class="o">:</span> <span class="kc">false</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id2">
+<h4>Example input:<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
+<p>Key:</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="o">{</span> <span class="s">&quot;col1&quot;</span><span class="o">:</span> <span class="mi">1</span> <span class="o">}</span>
+</pre></div>
+</div>
+<p>Value:</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="o">{</span> <span class="s">&quot;col2&quot;</span> <span class="o">:</span> <span class="mi">2</span><span class="o">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h4>Becomes:<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="o">[</span><span class="mi">1</span><span class="o">,</span><span class="mi">2</span><span class="o">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="jsonvaluerowdeserializer">
+<h3>JsonValueRowDeserializer<a class="headerlink" href="#jsonvaluerowdeserializer" title="Permalink to this headline">¶</a></h3>
+<p>Converts Json data from the message value field into row data.</p>
+<div class="section" id="id4">
+<h4>Example configuration:<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="o">{</span>
+  <span class="s">&quot;columns&quot;</span> <span class="o">:</span> <span class="o">[</span>
+    <span class="o">{</span>
+      <span class="s">&quot;name&quot;</span><span class="o">:</span> <span class="s">&quot;col1&quot;</span><span class="o">,</span>
+      <span class="s">&quot;type&quot;</span><span class="o">:</span> <span class="s">&quot;Integer&quot;</span><span class="o">,</span>
+    <span class="o">},</span>
+    <span class="o">{</span>
+      <span class="s">&quot;name&quot;</span><span class="o">:</span> <span class="s">&quot;col2&quot;</span><span class="o">,</span>
+      <span class="s">&quot;type&quot;</span><span class="o">:</span> <span class="s">&quot;Integer&quot;</span><span class="o">,</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id5">
+<h4>Example input:<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="o">{</span>
+  <span class="s">&quot;col1&quot;</span><span class="o">:</span> <span class="mi">1</span><span class="o">,</span>
+  <span class="s">&quot;col2&quot;</span><span class="o">:</span> <span class="mi">2</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id6">
+<h4>Becomes:<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="o">[</span><span class="mi">1</span><span class="o">,</span><span class="mi">2</span><span class="o">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="pathjsonvaluerowdeserializer">
+<h3>PathJsonValueRowDeserializer<a class="headerlink" href="#pathjsonvaluerowdeserializer" title="Permalink to this headline">¶</a></h3>
+<p>Converts Json data from the message value field into row data, using JsonPath to determine where
+to fetch the column value from.</p>
+<div class="section" id="id7">
+<h4>Example configuration:<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="o">{</span>
+  <span class="s">&quot;columns&quot;</span> <span class="o">:</span> <span class="o">[</span>
+    <span class="o">{</span>
+      <span class="s">&quot;name&quot;</span><span class="o">:</span> <span class="s">&quot;col1&quot;</span><span class="o">,</span>
+      <span class="s">&quot;type&quot;</span><span class="o">:</span> <span class="s">&quot;Integer&quot;</span><span class="o">,</span>
+      <span class="s">&quot;path&quot;</span><span class="o">:</span> <span class="s">&quot;$.col1&quot;</span>
+    <span class="o">},</span>
+    <span class="o">{</span>
+      <span class="s">&quot;name&quot;</span><span class="o">:</span> <span class="s">&quot;col2&quot;</span><span class="o">,</span>
+      <span class="s">&quot;type&quot;</span><span class="o">:</span> <span class="s">&quot;Integer&quot;</span><span class="o">,</span>
+      <span class="s">&quot;path&quot;</span><span class="o">:</span> <span class="s">&quot;$.someNode.col2&quot;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id8">
+<h4>Example input:<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="o">{</span>
+  <span class="s">&quot;col1&quot;</span><span class="o">:</span> <span class="mi">1</span><span class="o">,</span>
+  <span class="s">&quot;someNode&quot;</span> <span class="o">:</span> <span class="o">{</span>
+    <span class="s">&quot;col2&quot;</span><span class="o">:</span> <span class="mi">2</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id9">
+<h4>Becomes:<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="o">[</span><span class="mi">1</span><span class="o">,</span><span class="mi">2</span><span class="o">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Thomas Scott.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.9.0',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="static/jquery.js"></script>
+      <script type="text/javascript" src="static/underscore.js"></script>
+      <script type="text/javascript" src="static/doctools.js"></script>
+
+  
+
+  <script type="text/javascript" src="static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

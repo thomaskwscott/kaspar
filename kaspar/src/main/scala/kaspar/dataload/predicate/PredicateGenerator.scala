@@ -1,7 +1,6 @@
 package kaspar.dataload.predicate
 
 import kaspar.dataload.metadata.ColumnType.ColumnType
-import kaspar.dataload.predicate.PredicateType.PredicateType
 import kaspar.dataload.structure.RawRow
 
 import java.io.File

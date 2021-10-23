@@ -1,0 +1,290 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Kaspar &mdash; Kaspar 0.9.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Kaspar Core" href="kaspar_core.html" /> 
+
+  
+  <script src="static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="#" class="icon icon-home"> Kaspar
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="kaspar_core.html">Kaspar Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kaspar_server.html">Kaspar Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">Kaspar</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#">Docs</a> &raquo;</li>
+        
+      <li>Kaspar</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="sources/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="kaspar">
+<span id="id1"></span><h1>Kaspar<a class="headerlink" href="#kaspar" title="Permalink to this headline">¶</a></h1>
+<p>Contents:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="kaspar_core.html">Kaspar Core</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="kaspar_core.html#how-it-works">How it works</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kaspar_core.html#the-data-load-process">The data load process</a></li>
+<li class="toctree-l3"><a class="reference internal" href="kaspar_core.html#creating-rows-from-messages">Creating rows from messages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="kaspar_core.html#using-predicates">Using Predicates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="kaspar_core.html#running-sql">Running SQL</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kaspar_core.html#building-and-running">Building and Running</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kaspar_core.html#quick-start-creating-scala-applications-with-kaspar">Quick Start - Creating scala applications with Kaspar</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="kaspar_server.html">Kaspar Server</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="kaspar_server.html#building-and-running">Building and Running</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kaspar_server.html#api-reference">API Reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kaspar_server.html#query-apis">Query APIs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="kaspar_server.html#result-apis">Result APIs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="kaspar_server.html#table-apis">Table APIs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="kaspar_server.html#version-apis">Version APIs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kaspar_server.html#quick-start-creating-scala-applications-with-kaspar">Quick Start - Creating scala applications with Kaspar</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#version-0-9">Version 0.9</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="what-is-kaspar">
+<h2>What is Kaspar<a class="headerlink" href="#what-is-kaspar" title="Permalink to this headline">¶</a></h2>
+<p>Kaspar is a batch based SQL engine running on top of Apache Kafka. It co-locates Spark workers
+with Kafka brokers in order to give access to the underlying log segments that feed Kafka and
+query them in a batch oriented way rather than the traditional produce/consume.</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="o">+--------+</span>  <span class="o">+--------+</span>  <span class="o">+--------+</span>  <span class="o">+--------+</span>
+<span class="o">|</span> <span class="n">Kafka</span>  <span class="o">|</span>  <span class="o">|</span> <span class="n">Kafka</span>  <span class="o">|</span>  <span class="o">|</span> <span class="n">Kafka</span>  <span class="o">|</span>  <span class="o">|</span> <span class="n">Spark</span>  <span class="o">|</span>
+<span class="o">|</span>        <span class="o">|</span>  <span class="o">|</span>        <span class="o">|</span>  <span class="o">|</span>        <span class="o">|</span>  <span class="o">|</span> <span class="n">Master</span> <span class="o">|</span>
+<span class="o">|</span> <span class="n">Spark</span>  <span class="o">|</span>  <span class="o">|</span> <span class="n">Spark</span>  <span class="o">|</span>  <span class="o">|</span> <span class="n">Spark</span>  <span class="o">|</span>  <span class="o">|</span>        <span class="o">|</span>
+<span class="o">|</span> <span class="n">Worker</span> <span class="o">|</span>  <span class="o">|</span> <span class="n">Worker</span> <span class="o">|</span>  <span class="o">|</span> <span class="n">Worker</span> <span class="o">|</span>  <span class="o">|</span>        <span class="o">|</span>
+<span class="o">+--------+</span>  <span class="o">+--------+</span>  <span class="o">+--------+</span>  <span class="o">+--------+</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="start-with-why">
+<h2>Start with Why<a class="headerlink" href="#start-with-why" title="Permalink to this headline">¶</a></h2>
+<p>Why Kaspar?</p>
+<blockquote>
+<div><ul class="simple">
+<li>Organisations are increasingly moving towards centralised Kafka deployments. This means that
+cross domain data is already being landed into Kafka - Kafka is your data lake.</li>
+<li>Organisations are increasingly using high or infinite retention configurations in Kafka. This
+means that historical data for model training etc. is available in Kafka but inconvienient to
+access.</li>
+<li>Using Kaspar avoids the traditional extra copies of data in your analytical system
+(Hadoop etc.) by querying the data where it is created in Kafka</li>
+<li>Kaspar can handle much larger data sets than the current SQL on Kafka solution (KSQLDB).</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="kaspar-components">
+<h2>Kaspar Components<a class="headerlink" href="#kaspar-components" title="Permalink to this headline">¶</a></h2>
+<p>Kaspar is made up of 2 components:</p>
+<ol class="arabic simple">
+<li>Kaspar Core - The core library for use in Scala applications and Spark Shell</li>
+<li>Kaspar Server - An application that provides a REST interface for running SQL with Kaspar</li>
+</ol>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="kaspar_core.html" class="btn btn-neutral float-right" title="Kaspar Core" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Thomas Scott.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.9.0',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="static/jquery.js"></script>
+      <script type="text/javascript" src="static/underscore.js"></script>
+      <script type="text/javascript" src="static/doctools.js"></script>
+
+  
+
+  <script type="text/javascript" src="static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

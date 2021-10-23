@@ -1,0 +1,429 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Kaspar Core &mdash; Kaspar 0.9.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Kaspar Server" href="kaspar_server.html" />
+    <link rel="prev" title="Kaspar" href="index.html" /> 
+
+  
+  <script src="static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Kaspar
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Kaspar Core</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#how-it-works">How it works</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-data-load-process">The data load process</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#creating-rows-from-messages">Creating rows from messages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#using-predicates">Using Predicates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-sql">Running SQL</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#building-and-running">Building and Running</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#quick-start-creating-scala-applications-with-kaspar">Quick Start - Creating scala applications with Kaspar</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="kaspar_server.html">Kaspar Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Kaspar</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Kaspar Core</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="sources/kaspar_core.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="kaspar-core">
+<span id="id1"></span><h1>Kaspar Core<a class="headerlink" href="#kaspar-core" title="Permalink to this headline">¶</a></h1>
+<p>Kaspar is a way to bring Spark’s computational capabilities closer to Kafka data than the
+traditional consume pattern. Spark resources and Kafka resources are co located to provide fast
+access to the underlying Kafka data without going over the network.</p>
+<div class="section" id="how-it-works">
+<h2>How it works<a class="headerlink" href="#how-it-works" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="the-data-load-process">
+<h3>The data load process<a class="headerlink" href="#the-data-load-process" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ol class="arabic simple">
+<li>Using a Kafka AdminClient, Kaspar determines the node and disk location of log segments
+relevant to the Kaspar query. These locations are added to a Spark RDD that is partitioned
+so that each entry will run as it’s own task.</li>
+<li>Spark schedules each task to a worker colocated with a broker. Spark’s preferredLocation
+features are used to guide this scheduling however this is not garunteed. For this reason, the
+first thing this task does is check executor’s host name against the kafka partition’s ISR
+host list (This does not have to be leader as Kaspar can satisfy it’s read requirements from
+replicas. If the executor host is not in the ISR list then the task is failed and will be
+rescheduled by Spark until it finds an appropriate host to execute on.</li>
+<li>Once the above is satisfied, the task will read the data directly from disk (using a method
+similar to Kafka’s dumpLogSegments command) and return a RDD containing the message values.</li>
+<li>From here on in Spark can do the rest, possibly  adding a schema and running SparkSQL?</li>
+</ol>
+</div></blockquote>
+</div>
+<div class="section" id="creating-rows-from-messages">
+<h3>Creating rows from messages<a class="headerlink" href="#creating-rows-from-messages" title="Permalink to this headline">¶</a></h3>
+<p>Messages are converted to RawRow (kaspar.dataload.structure.RawRow) objects which wrap an array of
+values that each represent a column making a row. This conversion happens during the read from disk
+process. This is done using a RowDeserializer (kaspar.dataload.structure.RowDeserializer). The
+first 3 columns (rawRow.getColumnVal(0), rawRow.getColumnVal(1) and rawRow.getColumnVal(2)) are
+currently reserved for partition, offset and timestamps of the message.</p>
+<p>RawRows are fetched using the <cite>KasparDriver.getRows()</cite> method. This takes a number of parameters
+relevant to the underlying Kafka topic, any predicates to be applied at read time and the
+RowDeserializer used to convert messages to RawRow objects.</p>
+<p>For more information on RowDeserializers please see:
+<a class="reference internal" href="kaspar_rowdeserializers.html#kaspar-rowdeserializers"><span class="std std-ref">Row Deserializers</span></a></p>
+</div>
+<div class="section" id="using-predicates">
+<h3>Using Predicates<a class="headerlink" href="#using-predicates" title="Permalink to this headline">¶</a></h3>
+<p>Kaspar supports applying predicates at data read time at 2 levels:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Row predicates - a filter that is applied to each row read, unmatched rows are discarded.</li>
+<li>Segment predicates - a filter that determines whether or not a whole log segment should be
+read. These typically take advantage nof indexes provided for the segment files. For instance,
+if an index indicates that the maximum value for a given field in the segment is smaller than
+the minimum value in your query then there is no need to  read this segment. These predicates
+can greatly increase performance.</li>
+</ul>
+</div></blockquote>
+<p>For more information on predicates see:
+<a class="reference internal" href="kaspar_predicates.html#kaspar-predicates"><span class="std std-ref">Predicate Generators</span></a></p>
+</div>
+<div class="section" id="running-sql">
+<h3>Running SQL<a class="headerlink" href="#running-sql" title="Permalink to this headline">¶</a></h3>
+<p>Using SparkSQL we can load the RDDs created above as tables that can then ber queried using
+SparkSQL. The <cite>KasparDriver.registerTable()</cite> method is provided for this. This takes the following
+arguments:</p>
+<blockquote>
+<div><ul class="simple">
+<li>sqlContext - A SparkSQlContext in whcih to register the table</li>
+<li>rawRdd - The RDD created above</li>
+<li>tableName - The table name</li>
+<li>columnMappings - A list of tuples each representing a column name and column type. The order
+of this list should match the order of the fields in the RDD.</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="building-and-running">
+<h2>Building and Running<a class="headerlink" href="#building-and-running" title="Permalink to this headline">¶</a></h2>
+<p>Kaspar is a maven project so supports the usual goals. However, due to the way in which they are
+run, integration tests must be excluded from this build and run separately:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mvn -DskipTests clean package
+mvn -DtagsToExclude<span class="o">=</span>DOCKER <span class="nb">test</span>
+</pre></div>
+</div>
+<p>To run integration tests specify the test suite separately e.g.:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mvn -Dsuites<span class="o">=</span>integration.CsvSelectIntegrationTest <span class="nb">test</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="quick-start-creating-scala-applications-with-kaspar">
+<h2>Quick Start - Creating scala applications with Kaspar<a class="headerlink" href="#quick-start-creating-scala-applications-with-kaspar" title="Permalink to this headline">¶</a></h2>
+<p>The quick start is docker based so no external installation is required. For further examples
+please see the tests in the <cite>integration</cite> package.</p>
+<ol class="arabic">
+<li><p class="first">Start Services:</p>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker-compose up -d
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p class="first">Input some source data:</p>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker-compose <span class="nb">exec</span> master bash
+<span class="nb">cd</span> /home/ubuntu/bin
+./setup.sh
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p class="first">Launch Spark Shell</p>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker-compose <span class="nb">exec</span> master bash
+<span class="nb">cd</span> /home/ubuntu/bin
+./launchShell.sh
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p class="first">Set up the Kafka admin client and create a driver</p>
+<blockquote>
+<div><div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">kaspar.dataload.KasparDriverBuilder</span>
+<span class="n">val</span> <span class="n">clientProps</span> <span class="o">=</span> <span class="k">new</span> <span class="n">java</span><span class="o">.</span><span class="na">util</span><span class="o">.</span><span class="na">Properties</span>
+<span class="n">clientProps</span><span class="o">.</span><span class="na">setProperty</span><span class="o">(</span><span class="s">&quot;bootstrap.servers&quot;</span><span class="o">,</span><span class="s">&quot;worker1:9091&quot;</span><span class="o">)</span>
+<span class="n">val</span> <span class="n">kasparDriver</span> <span class="o">=</span> <span class="n">KasparDriverBuilder</span><span class="o">().</span><span class="na">withClientProperties</span><span class="o">(</span><span class="n">clientProps</span><span class="o">).</span><span class="na">build</span><span class="o">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p class="first">Set up a RowDeserializer</p>
+<blockquote>
+<div><div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">kaspar.dataload.structure.PathJsonValueRowDeserializer</span>
+<span class="n">val</span> <span class="n">customersDeserializer</span> <span class="o">=</span> <span class="k">new</span> <span class="n">PathJsonValueRowDeserializer</span><span class="o">()</span>
+<span class="n">val</span> <span class="n">customersRowDeserializerConfig</span> <span class="o">=</span>
+  <span class="s">&quot;&quot;&quot;</span>
+<span class="s">    |{</span>
+<span class="s">    |  &quot;</span><span class="n">columns</span><span class="s">&quot; : [</span>
+<span class="s">    |    {</span>
+<span class="s">    |       &quot;</span><span class="n">name</span><span class="s">&quot; : &quot;</span><span class="n">id</span><span class="s">&quot;,</span>
+<span class="s">    |       &quot;</span><span class="n">type</span><span class="s">&quot; : &quot;</span><span class="n">Integer</span><span class="s">&quot;,</span>
+<span class="s">    |       &quot;</span><span class="n">path</span><span class="s">&quot; : &quot;</span><span class="n">$</span><span class="o">.</span><span class="na">id</span><span class="s">&quot;</span>
+<span class="s">    |     },</span>
+<span class="s">    |     {</span>
+<span class="s">    |       &quot;</span><span class="n">name</span><span class="s">&quot; : &quot;</span><span class="n">name</span><span class="s">&quot;,</span>
+<span class="s">    |       &quot;</span><span class="n">type</span><span class="s">&quot; : &quot;</span><span class="n">String</span><span class="s">&quot;,</span>
+<span class="s">    |       &quot;</span><span class="n">path</span><span class="s">&quot; : &quot;</span><span class="n">$</span><span class="o">.</span><span class="na">name</span><span class="s">&quot;</span>
+<span class="s">    |     },</span>
+<span class="s">    |     {</span>
+<span class="s">    |       &quot;</span><span class="n">name</span><span class="s">&quot; : &quot;</span><span class="n">address</span><span class="s">&quot;,</span>
+<span class="s">    |       &quot;</span><span class="n">type</span><span class="s">&quot; : &quot;</span><span class="n">String</span><span class="s">&quot;,</span>
+<span class="s">    |       &quot;</span><span class="n">path</span><span class="s">&quot; : &quot;</span><span class="n">$</span><span class="o">.</span><span class="na">address</span><span class="s">&quot;</span>
+<span class="s">    |     },</span>
+<span class="s">    |     {</span>
+<span class="s">    |       &quot;</span><span class="n">name</span><span class="s">&quot; : &quot;</span><span class="n">age</span><span class="s">&quot;,</span>
+<span class="s">    |       &quot;</span><span class="n">type</span><span class="s">&quot; : &quot;</span><span class="n">Integer</span><span class="s">&quot;,</span>
+<span class="s">    |       &quot;</span><span class="n">path</span><span class="s">&quot; : &quot;</span><span class="n">$</span><span class="o">.</span><span class="na">age</span><span class="s">&quot;</span>
+<span class="s">    |     }</span>
+<span class="s">    |  ]</span>
+<span class="s">    |}</span>
+<span class="s">    |&quot;&quot;&quot;</span><span class="o">.</span><span class="na">stripMargin</span>
+<span class="n">customersDeserializer</span><span class="o">.</span><span class="na">configure</span><span class="o">(</span><span class="n">customersRowDeserializerConfig</span><span class="o">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p class="first">Extract rows from the Customers_json topic</p>
+<blockquote>
+<div><div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="n">val</span> <span class="n">customerRawRows</span> <span class="o">=</span> <span class="n">kasparDriver</span><span class="o">.</span><span class="na">getRows</span><span class="o">(</span><span class="n">sc</span><span class="o">,</span> <span class="s">&quot;Customers_json&quot;</span><span class="o">,</span> <span class="n">customersDeserializer</span><span class="o">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p class="first">Register the extracted rows as a table</p>
+<blockquote>
+<div><div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">kaspar.dataload.metadata.ColumnType</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.sql.SQLContext</span>
+<span class="n">val</span> <span class="n">customersColumnMappings</span> <span class="o">=</span>   <span class="n">Array</span><span class="o">(</span>
+  <span class="o">(</span><span class="s">&quot;id&quot;</span><span class="o">,</span><span class="n">ColumnType</span><span class="o">.</span><span class="na">INTEGER</span><span class="o">),</span>
+  <span class="o">(</span><span class="s">&quot;name&quot;</span><span class="o">,</span><span class="n">ColumnType</span><span class="o">.</span><span class="na">STRING</span><span class="o">),</span>
+  <span class="o">(</span><span class="s">&quot;address&quot;</span><span class="o">,</span><span class="n">ColumnType</span><span class="o">.</span><span class="na">STRING</span><span class="o">),</span>
+  <span class="o">(</span><span class="s">&quot;age&quot;</span><span class="o">,</span><span class="n">ColumnType</span><span class="o">.</span><span class="na">INTEGER</span><span class="o">)</span>
+<span class="o">)</span>
+<span class="n">val</span> <span class="n">sqlContext</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SQLContext</span><span class="o">(</span><span class="n">sc</span><span class="o">)</span>
+<span class="n">kasparDriver</span><span class="o">.</span><span class="na">registerTable</span><span class="o">(</span><span class="n">sqlContext</span><span class="o">,</span> <span class="n">customerRawRows</span><span class="o">,</span> <span class="s">&quot;Customers&quot;</span><span class="o">,</span> <span class="n">customersColumnMappings</span><span class="o">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p class="first">Query the table with SQL</p>
+<blockquote>
+<div><div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="n">val</span> <span class="n">sql</span> <span class="o">=</span>
+  <span class="s">&quot;&quot;&quot;</span>
+<span class="s">    | select *</span>
+<span class="s">    | from Customers</span>
+<span class="s">    |&quot;&quot;&quot;</span><span class="o">.</span><span class="na">stripMargin</span>
+<span class="n">val</span> <span class="n">resultDf</span> <span class="o">=</span> <span class="n">sqlContext</span><span class="o">.</span><span class="na">sql</span><span class="o">(</span><span class="n">sql</span><span class="o">)</span>
+<span class="n">val</span> <span class="n">collected</span> <span class="o">=</span> <span class="n">resultDf</span><span class="o">.</span><span class="na">collect</span><span class="o">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+</ol>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="kaspar_server.html" class="btn btn-neutral float-right" title="Kaspar Server" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Kaspar" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Thomas Scott.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.9.0',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="static/jquery.js"></script>
+      <script type="text/javascript" src="static/underscore.js"></script>
+      <script type="text/javascript" src="static/doctools.js"></script>
+
+  
+
+  <script type="text/javascript" src="static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

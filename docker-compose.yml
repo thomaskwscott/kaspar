@@ -111,6 +111,7 @@ services:
       - 8080:8080
       - 4040:4040
       - 7077:7077
+      - 8888:8888
     volumes:
       - ./serviceConfig/spark-defaults.conf:/usr/local/spark/conf/spark-defaults.conf
       - ./kaspar:/home/ubuntu/kaspar

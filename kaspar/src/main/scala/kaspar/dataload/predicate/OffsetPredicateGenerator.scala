@@ -7,7 +7,7 @@ import java.io.File
 import scala.collection.mutable
 import scala.util.control.Breaks.{break, breakable}
 
-class OffsetPredicateGenerator() extends PredicateGenerator with Serializable {
+  class OffsetPredicateGenerator() extends PredicateGenerator with Serializable {
   override def getIndexName(): String = "offset"
 
   override def getIndexFunction(columnsToIndex: Seq[(Int, ColumnType)]): Seq[RawRow] => String = {

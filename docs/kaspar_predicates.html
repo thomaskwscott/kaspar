@@ -1,0 +1,295 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Kaspar Predicates &mdash; Kaspar 0.9.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+
+  
+  <script src="static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Kaspar
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="kaspar_core.html">Kaspar Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kaspar_server.html">Kaspar Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Kaspar</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Kaspar Predicates</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="sources/kaspar_predicates.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="kaspar-predicates">
+<span id="id1"></span><h1>Kaspar Predicates<a class="headerlink" href="#kaspar-predicates" title="Permalink to this headline">¶</a></h1>
+<p>Kaspar supports applying predicates at data read time at 2 levels:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Row predicates - a filter that is applied to each row read, unmatched rows are discarded.</li>
+<li>Segment predicates - a filter that determines whether or not a whole log segment should be
+read. These typically take advantage nof indexes provided for the segment files. For instance,
+if an index indicates that the maximum value for a given field in the segment is smaller than
+the minimum value in your query then there is no need to  read this segment. These predicates
+can greatly increase performance.</li>
+</ul>
+</div></blockquote>
+<p>Predicates are created with a PredicateGenerator (kaspar.dataload.predicate.PredicateGenerator)
+offering the following interface:</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="n">def</span> <span class="nf">getIndexName</span><span class="o">()</span> <span class="o">:</span> <span class="n">String</span>
+
+<span class="n">def</span> <span class="nf">getIndexFunction</span><span class="o">(</span><span class="n">columnsToIndex</span><span class="o">:</span> <span class="n">Seq</span><span class="o">[(</span><span class="n">Int</span><span class="o">,</span><span class="n">ColumnType</span><span class="o">)])</span> <span class="o">:</span> <span class="n">Seq</span><span class="o">[</span><span class="n">RawRow</span><span class="o">]</span> <span class="o">=&gt;</span> <span class="n">String</span>
+
+<span class="n">def</span> <span class="nf">segmentPredicateFromJson</span><span class="o">(</span><span class="n">jsonConfig</span><span class="o">:</span> <span class="n">String</span><span class="o">):</span> <span class="o">(</span><span class="n">Seq</span><span class="o">[</span><span class="n">File</span><span class="o">],</span><span class="n">String</span><span class="o">,</span> <span class="n">Int</span><span class="o">,</span> <span class="n">String</span><span class="o">)</span> <span class="o">=&gt;</span> <span class="n">Boolean</span>
+
+<span class="n">def</span> <span class="nf">rowPredicateFromJson</span><span class="o">(</span><span class="n">jsonConfig</span><span class="o">:</span> <span class="n">String</span><span class="o">):</span> <span class="o">(</span><span class="n">RawRow</span><span class="o">)</span> <span class="o">=&gt;</span> <span class="n">Boolean</span>
+</pre></div>
+</div>
+<p>Explanations for these can be found below:</p>
+<blockquote>
+<div><ul class="simple">
+<li>getIndexName - This should be a unique name for the predicate. It is important that this is
+unique as this as it is appended to the name of any index files generated using
+getIndexFunction.</li>
+<li>getIndexFunction - This returns a function that is applied to the rows in a Kafka segment file
+in order to create an index file for that segment. This file can then be used with segment
+predicates.</li>
+<li>segmentPredicateFromJson - Creates a segment predicate function from a given Json config.</li>
+<li>rowPredicateFromJson - Creates a row predicate function from a given Json config.</li>
+</ul>
+</div></blockquote>
+<div class="section" id="existing-predicategenerators">
+<h2>Existing PredicateGenerators<a class="headerlink" href="#existing-predicategenerators" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="minmaxpredicategenerator">
+<h3>MinMaxPredicateGenerator<a class="headerlink" href="#minmaxpredicategenerator" title="Permalink to this headline">¶</a></h3>
+<p>Creates predicates that enforce a minimum of maximum value for a row field.</p>
+<div class="section" id="segment-predicate-example-configuration">
+<h4>Segment Predicate Example configuration:<a class="headerlink" href="#segment-predicate-example-configuration" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="o">{</span>
+  <span class="s">&quot;predicateType&quot;</span> <span class="o">:</span> <span class="s">&quot;GreaterThan&quot;</span>
+  <span class="s">&quot;threshold&quot;</span> <span class="o">:</span> <span class="mi">10</span><span class="o">,</span>
+  <span class="s">&quot;columnIndex&quot;</span> <span class="o">:</span> <span class="mi">1</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="row-predicate-example-configuration">
+<h4>Row Predicate Example configuration:<a class="headerlink" href="#row-predicate-example-configuration" title="Permalink to this headline">¶</a></h4>
+<p>Row predicates are not currently supported.</p>
+</div>
+</div>
+<div class="section" id="offsetpredicategenerator">
+<h3>OffsetPredicateGenerator<a class="headerlink" href="#offsetpredicategenerator" title="Permalink to this headline">¶</a></h3>
+<p>Creates predicates that enforce a minimum of maximum value for a row field.</p>
+<div class="section" id="id2">
+<h4>Segment Predicate Example configuration:<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="o">{</span>
+  <span class="s">&quot;predicateType&quot;</span><span class="o">:</span> <span class="s">&quot;GreaterThan&quot;</span>
+  <span class="s">&quot;partitionThresholds&quot;</span> <span class="o">:</span> <span class="o">[</span>
+    <span class="o">{</span> <span class="s">&quot;partition&quot;</span><span class="o">:</span> <span class="mi">0</span><span class="o">,</span> <span class="s">&quot;threshold&quot;</span><span class="o">:</span> <span class="mi">10</span> <span class="o">},</span>
+    <span class="o">{</span> <span class="s">&quot;partition&quot;</span><span class="o">:</span> <span class="mi">1</span><span class="o">,</span> <span class="s">&quot;threshold&quot;</span><span class="o">:</span> <span class="mi">20</span> <span class="o">}</span>
+  <span class="o">]</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h4>Row Predicate Example configuration:<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="o">{</span>
+  <span class="s">&quot;predicateType&quot;</span><span class="o">:</span> <span class="s">&quot;GreaterThan&quot;</span>
+  <span class="s">&quot;partitionThresholds&quot;</span> <span class="o">:</span> <span class="o">[</span>
+    <span class="o">{</span> <span class="s">&quot;partition&quot;</span><span class="o">:</span> <span class="mi">0</span><span class="o">,</span> <span class="s">&quot;threshold&quot;</span><span class="o">:</span> <span class="mi">10</span> <span class="o">},</span>
+    <span class="o">{</span> <span class="s">&quot;partition&quot;</span><span class="o">:</span> <span class="mi">1</span><span class="o">,</span> <span class="s">&quot;threshold&quot;</span><span class="o">:</span> <span class="mi">20</span> <span class="o">}</span>
+  <span class="o">]</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Thomas Scott.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.9.0',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="static/jquery.js"></script>
+      <script type="text/javascript" src="static/underscore.js"></script>
+      <script type="text/javascript" src="static/doctools.js"></script>
+
+  
+
+  <script type="text/javascript" src="static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

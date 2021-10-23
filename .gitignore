@@ -13,3 +13,4 @@
 *.DS_Store
 aws_keys.sh
 exampleMemRead.txt
+/docs_build/_build*
