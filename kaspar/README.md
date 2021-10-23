@@ -22,5 +22,5 @@ To run integration tests specify the test suite separately e.g.:
 
 Please see the documentation here:
 
-[documentation](https://thomaskwscott.github.io/kaspar/)
+[documentation](https://thomaskwscott.github.io/kaspar/index.html)
 

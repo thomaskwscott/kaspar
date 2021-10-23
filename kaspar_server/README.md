@@ -14,5 +14,5 @@ Kaspar Server is a maven project so supports the usual goals.
 
 Please see the documentation here:
 
-[documentation](https://thomaskwscott.github.io/kaspar/)
+[documentation](https://thomaskwscott.github.io/kaspar/index.html)
 

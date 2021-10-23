@@ -11,5 +11,5 @@ stored in Kafka.
 
 Please see the documentation here:
 
-[documentation](https://thomaskwscott.github.io/kaspar/)
+[documentation](https://thomaskwscott.github.io/kaspar/index.html)
 
