@@ -8,6 +8,7 @@ import kaspar.dataload.metadata.ColumnType.ColumnType
 import kaspar.dataload.metadata.{ColumnType, Location, TaskAssignment}
 import kaspar.dataload.structure.{RawRow, RowDeserializer}
 import org.apache.kafka.clients.admin.AdminClient
+import org.apache.kafka.common.record.FileLogInputStream.FileChannelRecordBatch
 import org.apache.kafka.common.record.{AbstractRecords, FileRecords}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
@@ -71,14 +72,23 @@ class KasparDriver  (clientProps: Properties) extends Serializable {
 
     val rawData: RDD[RawRow] = sparkContext.makeRDD(taskAssignments).flatMap((taskAssignment: TaskAssignment) => {
       val hosts = taskAssignment.locations.map(l => l.host)
-      val actualHost = java.net.InetAddress.getLocalHost().getHostName()
-      if (!hosts.contains(actualHost)) throw new RuntimeException("Ignore this, Spark scheduled this task " +
+      val actualHost = validHost(hosts, java.net.InetAddress.getLocalHost().getHostName())
+      if (actualHost.isEmpty) throw new RuntimeException("Ignore this, Spark scheduled this task " +
         "on the wrong broker. Expected: " + hosts.mkString(",") + " actual: " + actualHost + ". \n" + "You should " +
         "have blacklisting configurations that mean this will be rescheduled on a different node\n")
       val dataDirs = taskAssignment.locations.filter(l => l.host == actualHost)(0).dataDirs
       getRecords(topicName, taskAssignment.partitionId, rowDeserializer, dataDirs, rowPredicates, segmentPredicates).iterator
     })
     rawData
+  }
+
+  def validHost(hosts: Seq[String], actualHost: String): String = {
+    val filteredHosts = hosts.filter(host => host.startsWith(actualHost))
+    if (filteredHosts.nonEmpty) {
+      filteredHosts.head
+    } else {
+      ""
+    }
   }
 
   def createIndex(sparkContext: SparkContext,

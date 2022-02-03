@@ -72,6 +72,25 @@ class MinMaxPredicateGenerator() extends PredicateGenerator with Serializable {
   }
 
   override def rowPredicateFromJson(jsonConfig: String): RawRow => Boolean = {
-    throw new UnsupportedOperationException("MinMax row predicate not supported")
+    /*
+      json structure for greater than predicate:
+      {
+        "predicateType" : "GreaterThan"
+        "threshold" : 10,
+        "columnIndex" : 1
+      }
+    */
+    val jsonConfigObj = JsonPath.parse(jsonConfig)
+    val predicateType = jsonConfigObj.read[String]("$.predicateType")
+    val threshold = jsonConfigObj.read[Int]("$.threshold")
+    val columnIndex = jsonConfigObj.read[Int]("$.columnIndex")
+
+    if (predicateType == "GreaterThan") {
+      (row: RawRow) => {
+        row.getIntVal(columnIndex) > threshold
+      }
+    } else {
+      (row: RawRow) => true
+    }
   }
 }

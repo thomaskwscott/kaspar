@@ -90,6 +90,9 @@ class KasparRunner (val clientProperties: Properties,
       val objectMapper = new ObjectMapper()
       val tableSpec = objectMapper.readTree(metastoreDao.getTable(tableName).get.tableSpec)
 
+      val topicName = if (tableSpec.has("topicName") && !tableSpec.get("topicName").asText().isEmpty)
+        tableSpec.get("topicName").asText() else tableName
+
       val tableDeserializerClass = Class.forName(tableSpec.get("deserializerClass").asText())
       val tableDeserializer = tableDeserializerClass.newInstance().asInstanceOf[RowDeserializer]
       val tableConfig  = tableSpec.get("config");
@@ -125,7 +128,7 @@ class KasparRunner (val clientProperties: Properties,
 
       val tableRawRows = kasparDriver.getRows(
         sc,
-        tableName,
+        topicName,
         tableDeserializer,
         rowPredicates.toArray,
         segmentPredicates.toArray

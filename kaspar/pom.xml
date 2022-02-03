@@ -82,6 +82,8 @@
                                 <includes>
                                     <include>com.jayway.jsonpath:*</include>
                                     <include>net.minidev:*</include>
+                                    <include>org.apache.kafka:*</include>
+                                    <include>com.typesafe.scala-logging:*</include>
                                 </includes>
                             </artifactSet>
                         </configuration>
@@ -204,6 +206,12 @@
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_2.12</artifactId>
             <version>3.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.typesafe.scala-logging</groupId>
+            <artifactId>scala-logging_2.12</artifactId>
+            <version>3.9.4</version>
         </dependency>
 
         <dependency>

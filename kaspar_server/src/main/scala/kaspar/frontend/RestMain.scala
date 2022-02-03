@@ -11,8 +11,6 @@ import java.io.FileInputStream
 import java.util.Properties
 import scala.io.StdIn
 
-
-
 class RestMain(clientProperties: Properties) {
 
   implicit val system = ActorSystem(Behaviors.empty, "kaspar-system")
