@@ -13,6 +13,7 @@ import net.sf.jsqlparser.statement.select.Select
 import net.sf.jsqlparser.util.TablesNamesFinder
 import org.apache.spark.sql
 import org.apache.spark.sql.{SQLContext, SaveMode, SparkSession}
+import statement.StatementAnalyzer
 
 import java.io.File
 import java.util.Properties
@@ -144,10 +145,10 @@ class KasparRunner (val clientProperties: Properties,
     (tables, statement)
   }
 
-  def getTables(statement: String): Seq[String] = {
-    val parsedStatement = CCJSqlParserUtil.parse(statement)
-    val selectStatement = parsedStatement.asInstanceOf[Select]
-    val tablesNamesFinder = new TablesNamesFinder
-    tablesNamesFinder.getTableList(selectStatement).asScala
+  def getStatementHints(statement: String): Seq[String] = {
+    val statementAnalyzer = new StatementAnalyzer(statement)
+    val tables = statementAnalyzer.getTableList()
+    val columnConstants = statementAnalyzer.getColumnConstants()
+
   }
 }

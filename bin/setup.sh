@@ -19,3 +19,13 @@ kafka-console-producer --broker-list worker1:9091 --topic Items_json --property 
 
 #kafka-topics --bootstrap-server alt-worker1:10091 --create --topic Alt_customers_json --replication-factor 1 --partitions 6
 #kafka-console-producer --broker-list alt-worker1:10091 --topic Alt_customers_json --producer.config producer.properties < /home/ubuntu/resources/Customers_json.txt
+
+# to set up index testing we have to dome tricky stuff:
+# 1. a segment with separate record batches in order dummy, good, dummy
+# 2. roll the segment then add a further dummy as indexing doesn't happen on the active segment
+kafka-topics --bootstrap-server worker1:9091 --create --topic Customers_index --replication-factor 2 --partitions 1 --config segment.ms=30000
+kafka-console-producer --broker-list worker1:9091 --topic Customers_index --producer.config producer.properties < /home/ubuntu/resources/Single_Customer_Dummy.txt
+kafka-console-producer --broker-list worker1:9091 --topic Customers_index --producer.config producer.properties < /home/ubuntu/resources/Single_Customer_Legit.txt
+kafka-console-producer --broker-list worker1:9091 --topic Customers_index --producer.config producer.properties < /home/ubuntu/resources/Single_Customer_Dummy.txt
+sleep 30
+kafka-console-producer --broker-list worker1:9091 --topic Customers_index --producer.config producer.properties < /home/ubuntu/resources/Single_Customer_Dummy2.txt

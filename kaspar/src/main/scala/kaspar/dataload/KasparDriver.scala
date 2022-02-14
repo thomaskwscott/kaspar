@@ -1,15 +1,17 @@
 package kaspar.dataload
 
+import kaspar.dataload.KasparDriver.READ_WHOLE_SEGMENT
+
 import java.io.{File, FilenameFilter, IOException}
 import java.util.{Collections, Properties}
 import java.nio.file.{Files, Paths}
 import java.nio.charset.StandardCharsets
 import kaspar.dataload.metadata.ColumnType.ColumnType
 import kaspar.dataload.metadata.{ColumnType, Location, TaskAssignment}
-import kaspar.dataload.structure.{RawRow, RowDeserializer}
+import kaspar.dataload.structure.{PositionRawRow, RawRow, RowDeserializer}
 import org.apache.kafka.clients.admin.AdminClient
 import org.apache.kafka.common.record.FileLogInputStream.FileChannelRecordBatch
-import org.apache.kafka.common.record.{AbstractRecords, FileRecords}
+import org.apache.kafka.common.record.{AbstractRecords, FileRecords, RecordBatch}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.{DataTypes, Metadata, StructField, StructType}
@@ -66,7 +68,7 @@ class KasparDriver  (clientProps: Properties) extends Serializable {
               topicName: String,
               rowDeserializer: RowDeserializer,
               rowPredicates: Array[(RawRow)=> Boolean] = Array(),
-              segmentPredicates: Array[(Seq[File],String,Int,String) => Boolean] = Array()) : RDD[RawRow] = {
+              segmentPredicates: Array[(Seq[File],String,Int,String) => (Int,Int)] = Array()) : RDD[RawRow] = {
 
     val taskAssignments = getTaskAssignments(topicName)
 
@@ -95,7 +97,7 @@ class KasparDriver  (clientProps: Properties) extends Serializable {
                   topicName: String,
                   rowDeserializer: RowDeserializer,
                   indexName: String,
-                  indexFunction: Seq[RawRow] => String) : RDD[(String,String,Boolean)] = {
+                  indexFunction: Seq[PositionRawRow] => String) : RDD[(String,String,Boolean)] = {
 
     val taskAssignments = getTaskAssignments(topicName)
 
@@ -119,7 +121,7 @@ class KasparDriver  (clientProps: Properties) extends Serializable {
           // the segment has data and there isn't a pre-existing index
           val indexPath = Paths.get(segment.getAbsolutePath().dropRight(3) + indexName)
           if( segment.length() > 0 && !Files.exists(indexPath)) {
-            val segmentRecords = getSegmentRecords(segment, taskAssignment.partitionId, rowDeserializer, Seq.empty)
+            val segmentRecords = getSegmentRecords(segment, taskAssignment.partitionId, READ_WHOLE_SEGMENT, READ_WHOLE_SEGMENT, rowDeserializer, Seq.empty)
             // indexFunction returns  what to write to the index file
             val indexData = indexFunction(segmentRecords)
             Files.write(indexPath, indexData.getBytes(StandardCharsets.UTF_8))
@@ -153,29 +155,46 @@ class KasparDriver  (clientProps: Properties) extends Serializable {
                          rowDeserializer: RowDeserializer,
                          dataDirs: Seq[String],
                          rowPredicates: Seq[(RawRow) => Boolean],
-                         segmentPredicates: Seq[(Seq[File],String,Int,String) => Boolean]): Seq[RawRow] = {
+                         segmentPredicates: Seq[(Seq[File],String,Int,String) => (Int, Int)]): Seq[RawRow] = {
 
     val partitionFiles = getSegments(dataDirs,topicName,partition)
 
     partitionFiles.flatMap(segmentFile => {
 
+
+      val segmentBounds = if (segmentPredicates.isEmpty)
+        (KasparDriver.READ_WHOLE_SEGMENT,  KasparDriver.READ_WHOLE_SEGMENT)
+      else
+        getSegmentBounds(topicName, partition, partitionFiles, segmentFile, segmentPredicates)
+
       // check for segment predicate
-      if(segmentPredicates.forall(predicate =>
-        predicate(partitionFiles,topicName,partition,segmentFile.getPath())
-      )) {
-        getSegmentRecords(segmentFile,partition,rowDeserializer,rowPredicates)
-      } else {
+      if(segmentBounds._1 == KasparDriver.DO_NOT_READ_SEGMENT) {
         Array[RawRow]()
+      } else {
+        getSegmentRecords(segmentFile,partition, segmentBounds._1, segmentBounds._2, rowDeserializer,rowPredicates)
+          .map(record => record.rawRow)
       }
     })
   }
 
+  private def getSegmentBounds(topicName: String,
+                               partition: Int,
+                               partitionFiles: Seq[File],
+                               segmentFile: File,
+                               segmentPredicates: Seq[(Seq[File],String,Int,String) => (Int, Int)]): (Int,Int) = {
+    segmentPredicates.map(predicate =>
+      predicate(partitionFiles, topicName, partition, segmentFile.getPath())
+    ).reduce((left,  right) => (left._1 min right._1, left._2 min right._2))
+  }
+
   private def getSegmentRecords(segmentFile: File,
                                 partition: Int,
+                                startPosition: Int,
+                                endPosition: Int,
                                 rowDeserializer: RowDeserializer,
-                                rowPredicates: Seq[RawRow => Boolean]): Seq[RawRow] = {
+                                rowPredicates: Seq[RawRow => Boolean]): Seq[PositionRawRow] = {
     val records: FileRecords = FileRecords.open(segmentFile)
-    rowsFromRecords(records,partition,rowDeserializer,rowPredicates)
+    rowsFromRecords(records,partition,startPosition, endPosition, rowDeserializer,rowPredicates)
   }
 
   private def getSegments(dataDirs: Seq[String], topicName: String, partition: Int) =  {
@@ -196,25 +215,50 @@ class KasparDriver  (clientProps: Properties) extends Serializable {
 
   private def rowsFromRecords(records: AbstractRecords,
                               partition: Int,
+                              startPosition: Int,
+                              endPosition: Int,
                               rowDeserializer: RowDeserializer,
-                              rowPredicates: Seq[(RawRow) => Boolean]): Seq[RawRow] = {
-    records.batches.asScala.flatMap(batch => {
-      batch.asScala.map(record => {
-        val newRow: RawRow = new RawRow()
-        newRow.setRawVals(rowDeserializer.toColumns(partition, record))
-        newRow
-      }).filter(newRow => {
-        rowPredicates.forall(predicate => {
-          predicate(newRow)
-        })
-      })
-    }).toSeq
+                              rowPredicates: Seq[(RawRow) => Boolean]): Seq[PositionRawRow] = {
+    // we're reading the whole records
+    if (startPosition == READ_WHOLE_SEGMENT || !records.isInstanceOf[FileRecords]) {
+      records.batches.asScala.flatMap(batch => {
+        batchToRawRows(partition, batch, rowDeserializer, rowPredicates)
+      }).toSeq
+    } else {
+      // we're reading a subset of records
+      val batchIter = records.asInstanceOf[FileRecords].batchesFrom(startPosition).asScala.iterator
+      batchIter.takeWhile(batch => batch.position() == endPosition).flatMap(batch => {
+        batchToRawRows(partition, batch, rowDeserializer, rowPredicates)
+      }
+      ).toSeq
+    }
   }
 
+  private def batchToRawRows(partition: Int,
+                             batch: RecordBatch,
+                             rowDeserializer: RowDeserializer,
+                             rowPredicates: Seq[(RawRow) => Boolean]): Seq[PositionRawRow] = {
+    val position = if (batch.isInstanceOf[FileChannelRecordBatch])
+        batch.asInstanceOf[FileChannelRecordBatch].position()
+    else
+      -1
+    batch.asScala.map(record => {
+      val newRow: RawRow = new RawRow(rowDeserializer.toColumns(partition, record))
+      PositionRawRow(position,newRow)
+    }).filter(newRow => {
+      rowPredicates.forall(predicate => {
+        predicate(newRow.rawRow)
+      })
+    })
+  }.toSeq
 }
 
 object KasparDriver {
   def builder() : KasparDriverBuilder = KasparDriverBuilder()
+
+  // flags for predicate reads
+  final val DO_NOT_READ_SEGMENT =  -2
+  final val READ_WHOLE_SEGMENT = -1
 }
 
 case class KasparDriverBuilder (

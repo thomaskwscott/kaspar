@@ -1,12 +1,6 @@
 package kaspar.dataload.structure
 
-class RawRow extends Serializable {
-
-  private var rawVals:Seq[Any] = null
-
-  def setRawVals(rawVals: Seq[Any]): Unit = {
-    this.rawVals = rawVals
-  }
+class RawRow (val rawVals: Seq[Any] = null) extends Serializable {
 
   def getColumnVal(columnIndex: Int): Any = {
     if (rawVals != null && columnIndex < rawVals.length) return rawVals(columnIndex)

@@ -14,3 +14,11 @@ kafka-topics --bootstrap-server worker1:9091 --create --topic Items_json --repli
 kafka-console-producer --broker-list worker1:9091 --topic Customers_json --producer.config producer.properties < /home/ubuntu/sampleData/Customers_json.txt
 kafka-console-producer --broker-list worker1:9091 --topic Transactions_json < /home/ubuntu/sampleData/Transactions_json.txt
 kafka-console-producer --broker-list worker1:9091 --topic Items_json --property "parse.key=true" --property "key.separator=|" < /home/ubuntu/sampleData/Items_json.txt
+
+
+kafka-topics --bootstrap-server worker1:9091 --create --topic Customers_index --replication-factor 2 --partitions 1 --config segment.ms=10000
+kafka-console-producer --broker-list worker1:9091 --topic Customers_index --producer.config producer.properties < /home/ubuntu/sampleData/Single_Customer_Dummy.txt
+kafka-console-producer --broker-list worker1:9091 --topic Customers_index --producer.config producer.properties < /home/ubuntu/sampleData/Single_Customer_Legit.txt
+kafka-console-producer --broker-list worker1:9091 --topic Customers_index --producer.config producer.properties < /home/ubuntu/sampleData/Single_Customer_Dummy.txt
+sleep 10
+kafka-console-producer --broker-list worker1:9091 --topic Customers_index --producer.config producer.properties < /home/ubuntu/sampleData/Single_Customer_Dummy2.txt

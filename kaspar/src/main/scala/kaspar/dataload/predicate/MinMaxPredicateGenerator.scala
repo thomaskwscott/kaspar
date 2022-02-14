@@ -1,12 +1,13 @@
 package kaspar.dataload.predicate
 
 import com.jayway.jsonpath.JsonPath
+import kaspar.dataload.KasparDriver
 
 import java.io.File
 import java.nio.file.{Files, Paths}
 import kaspar.dataload.metadata.ColumnType
 import kaspar.dataload.metadata.ColumnType.ColumnType
-import kaspar.dataload.structure.RawRow
+import kaspar.dataload.structure.{PositionRawRow, RawRow}
 
 import scala.io.Source
 
@@ -15,10 +16,11 @@ class MinMaxPredicateGenerator() extends PredicateGenerator with Serializable {
   override def getIndexName(): String = "minMax.index"
 
   override def getIndexFunction(columnsToIndex: Seq[(Int, ColumnType)]):
-  Seq[RawRow] => String = {
-    records: Seq[RawRow] => {
+  Seq[PositionRawRow] => String = {
+    records: Seq[PositionRawRow] => {
       columnsToIndex.map(column => {
-        val columnRecords = records.map(rawRow => {
+        val columnRecords = records.map(positionRawRow => {
+          val rawRow = positionRawRow.rawRow
           column._2 match {
             case ColumnType.LONG => rawRow.getLongVal(column._1)
             case ColumnType.DOUBLE => rawRow.getDoubleVal(column._1)
@@ -39,7 +41,7 @@ class MinMaxPredicateGenerator() extends PredicateGenerator with Serializable {
   }
 
   override def segmentPredicateFromJson(jsonConfig: String):
-        (Seq[File], String, Int, String) => Boolean = {
+        (Seq[File], String, Int, String) => (Int, Int) = {
     /*
       json structure for greater than predicate:
       {
@@ -64,10 +66,15 @@ class MinMaxPredicateGenerator() extends PredicateGenerator with Serializable {
             }
           }
         }
-        shouldRead
+        if(shouldRead) {
+          (KasparDriver.READ_WHOLE_SEGMENT,KasparDriver.READ_WHOLE_SEGMENT)
+        } else {
+          (KasparDriver.DO_NOT_READ_SEGMENT,KasparDriver.DO_NOT_READ_SEGMENT)
+        }
       }
     } else {
-      (partitionFiles: Seq[File], topicName: String, partition: Int, segmentFileName: String) => false
+      // we don't understand this predicate so read everything
+      (partitionFiles: Seq[File], topicName: String, partition: Int, segmentFileName: String) => (KasparDriver.READ_WHOLE_SEGMENT,KasparDriver.READ_WHOLE_SEGMENT)
     }
   }
 

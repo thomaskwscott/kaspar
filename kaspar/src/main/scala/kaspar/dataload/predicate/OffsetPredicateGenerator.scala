@@ -1,7 +1,8 @@
 package kaspar.dataload.predicate
 import com.jayway.jsonpath.JsonPath
+import kaspar.dataload.KasparDriver
 import kaspar.dataload.metadata.ColumnType.ColumnType
-import kaspar.dataload.structure.RawRow
+import kaspar.dataload.structure.{PositionRawRow, RawRow}
 
 import java.io.File
 import scala.collection.mutable
@@ -10,12 +11,12 @@ import scala.util.control.Breaks.{break, breakable}
   class OffsetPredicateGenerator() extends PredicateGenerator with Serializable {
   override def getIndexName(): String = "offset"
 
-  override def getIndexFunction(columnsToIndex: Seq[(Int, ColumnType)]): Seq[RawRow] => String = {
+  override def getIndexFunction(columnsToIndex: Seq[(Int, ColumnType)]): Seq[PositionRawRow] => String = {
     throw new IllegalStateException("Offset index is pre-existing and should not be recreated.")
   }
 
   override def segmentPredicateFromJson(jsonConfig: String):
-  (Seq[File], String, Int, String) => Boolean = {
+  (Seq[File], String, Int, String) => (Int, Int) = {
 
     val config = getConfigFromJson(jsonConfig)
     val predicateType = config._1
@@ -25,7 +26,7 @@ import scala.util.control.Breaks.{break, breakable}
 
         if (!partitionThresholds.contains(partition)) {
           // if you don't provide a threshold for this partition we will read segments regardless
-          true
+          (KasparDriver.READ_WHOLE_SEGMENT, KasparDriver.READ_WHOLE_SEGMENT)
         } else {
           val offsetSegmentsMap = partitionFiles.map(file => file.getName.dropRight(4).toInt -> file.getPath).toMap
           val offsetSegments = offsetSegmentsMap.keys.toArray.sorted
@@ -34,7 +35,7 @@ import scala.util.control.Breaks.{break, breakable}
 
           // if there is only 1 segment or this is the last segment we can bail out here as we will always read it
           if (offsetSegments.length == 1 || segmentFileName == offsetSegmentsMap(offsetSegments.last)) {
-            true
+            (KasparDriver.READ_WHOLE_SEGMENT, KasparDriver.READ_WHOLE_SEGMENT)
           } else {
             // find the segment which contains the crossing offset.
             val threshold = partitionThresholds(partition)
@@ -54,12 +55,17 @@ import scala.util.control.Breaks.{break, breakable}
                 }
               }
             }
-            shouldRead
+            if (shouldRead) {
+              (KasparDriver.READ_WHOLE_SEGMENT, KasparDriver.READ_WHOLE_SEGMENT)
+            } else {
+              (KasparDriver.DO_NOT_READ_SEGMENT, KasparDriver.DO_NOT_READ_SEGMENT)
+            }
           }
         }
       }
     } else {
-      (partitionFiles: Seq[File], topicName: String, partition: Int, segmentFileName: String) => false
+      // we don't understand this predicate so read everything
+      (partitionFiles: Seq[File], topicName: String, partition: Int, segmentFileName: String) => (KasparDriver.READ_WHOLE_SEGMENT,KasparDriver.READ_WHOLE_SEGMENT)
     }
   }
 

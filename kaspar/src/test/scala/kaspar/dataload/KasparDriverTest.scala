@@ -1,7 +1,7 @@
 package kaspar.dataload
 
 import kaspar.dataload.metadata.{ColumnType, Location, TaskAssignment}
-import kaspar.dataload.structure.{CsvRowDeserializer, RawRow}
+import kaspar.dataload.structure.{CsvRowDeserializer, RawRow, PositionRawRow}
 import org.apache.kafka.clients.admin.{AdminClient, DescribeClusterResult, DescribeLogDirsResult, DescribeTopicsResult, TopicDescription}
 import org.apache.kafka.common.{KafkaFuture, Node, TopicPartitionInfo}
 import org.apache.spark.rdd.RDD
@@ -239,7 +239,7 @@ class KasparDriverTest extends AnyFlatSpec {
 
     val topic = "someTopic"
     val indexName = "someIndexName"
-    val indexFunction = {records: Seq[RawRow] => "someIndexVal"}
+    val indexFunction = {records: Seq[PositionRawRow] => "someIndexVal"}
     val rowDeserializer = new CsvRowDeserializer
     val mockSparkContext = mock[SparkContext]
     val mockAdminClient = mock[AdminClient]
