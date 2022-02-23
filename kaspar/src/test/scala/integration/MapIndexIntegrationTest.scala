@@ -79,7 +79,7 @@ object MapIndexIntegrationTest {
     val waynePredicate = mapIndexGenerator.segmentPredicateFromJson(
       """
         |{
-        |  "value": "Peter Parker",
+        |  "value": "Bruce Wayne",
         |  "columnIndex" : 4
         |}
         |""".stripMargin
