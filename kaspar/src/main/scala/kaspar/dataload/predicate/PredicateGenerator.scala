@@ -7,11 +7,11 @@ import java.io.File
 
 trait PredicateGenerator {
 
-  def getIndexName() : String
+  def getIndexName(): String
 
-  def getIndexFunction(columnsToIndex: Seq[(Int, ColumnType)]) : Seq[PositionRawRow] => String
+  def getIndexFunction(columnsToIndex: Seq[(Int, ColumnType)]): Seq[PositionRawRow] => String
 
-  def segmentPredicateFromJson(jsonConfig: String): (Seq[File],String, Int, String) => (Int, Int)
+  def segmentPredicateFromJson(jsonConfig: String): (Seq[File], String, Int, String) => Seq[(Int, Int)]
 
   def rowPredicateFromJson(jsonConfig: String): (RawRow) => Boolean
 }

@@ -12,12 +12,13 @@ import scala.io.Source
 
 /*
 This creates an index file that represents:
-
-column -> value -> earliest position in segment for value -> latest position in segment for value
+column -> value -> repeating interval ranges for value in segment, for example:
+1:abcd:10:500:700:750:850:920 - column index 1, value abcd and 3 intervals 10-500, 700-750 and 850-920
 
 Using the above a segment predicate can reduce the amount of segment it needs to read
  */
 class MapIndexPredicateGenerator() extends PredicateGenerator with Serializable {
+  val MAX_GAP: Int = 10 * 1024 * 1024; // 10 MB - maximum gap between records in the interval to trigger closure of interval and start of a new one.
 
   override def getIndexName(): String = "map.index"
 
@@ -25,17 +26,19 @@ class MapIndexPredicateGenerator() extends PredicateGenerator with Serializable 
   Seq[PositionRawRow] => String = {
     records: Seq[PositionRawRow] => {
       val columnsMap = columnsToIndex.map(column => {
-        val columnMap = mutable.Map[String, (Int,Int)]()
+        val columnMap = mutable.Map[String, mutable.Buffer[(Int, Int)]]()
         records.foreach(positionRawRow => {
           // for now we will tostring as we don't care about types
           val columnVal = positionRawRow.rawRow.getStringVal(column._1)
-          val currEntry = columnMap.get(columnVal).getOrElse((positionRawRow.position, positionRawRow.position))
-          // we read sequentially so don't need to worry about the min case
-          if (currEntry._2 < positionRawRow.position) {
-            columnMap.put(columnVal,(currEntry._1,positionRawRow.position))
+          val currIndexList = columnMap.getOrElse(columnVal, mutable.Buffer())
+          val currEntry = currIndexList.lastOption.getOrElse((-1, -1))
+
+          if (currEntry._2 == -1 || (currEntry._2 + MAX_GAP < positionRawRow.position)) { //if its first match or if gap bigger than max
+            currIndexList.append((positionRawRow.position, positionRawRow.position)) //  add new tuple to list with min,max set to current row position
           } else {
-            columnMap.put(columnVal, currEntry)
+            currIndexList(currIndexList.length - 1) = (currEntry._1, positionRawRow.position) //otherwise - update last index tuple with new max position
           }
+          columnMap.put(columnVal, currIndexList)
         })
         (column._1, columnMap.toMap)
       }).toMap
@@ -43,20 +46,19 @@ class MapIndexPredicateGenerator() extends PredicateGenerator with Serializable 
     }
   }
 
-  private def serializeIndex(index: Map[Int, Map[String, (Int,Int)]]) : String = {
+  private def serializeIndex(index: Map[Int, Map[String, Seq[(Int, Int)]]]): String = {
     index.flatMap(columnEntry => {
       val columnIndex = columnEntry._1
       columnEntry._2.map(valueEntry => {
         val value = valueEntry._1
-        val startPosition = valueEntry._2._1
-        val endPosition = valueEntry._2._2
-        (columnIndex, value, startPosition, endPosition).productIterator.mkString(":")
+        val intervalRanges = valueEntry._2.flatten { case (a, b) => Seq(a, b) }
+        (List(columnIndex, value) ++ intervalRanges).iterator.mkString(":")
       })
     }).mkString("\n")
   }
 
   override def segmentPredicateFromJson(jsonConfig: String):
-  (Seq[File], String, Int, String) => (Int, Int) = {
+  (Seq[File], String, Int, String) => Seq[(Int, Int)] = {
     /*
       json structure for map predicate:
       {
@@ -70,18 +72,18 @@ class MapIndexPredicateGenerator() extends PredicateGenerator with Serializable 
 
     (partitionFiles: Seq[File], topicName: String, partition: Int, segmentFileName: String) => {
       // default position is toread nothing
-      var readRange =(KasparDriver.DO_NOT_READ_SEGMENT,KasparDriver.DO_NOT_READ_SEGMENT)
+      var readRange = Seq((KasparDriver.DO_NOT_READ_SEGMENT, KasparDriver.DO_NOT_READ_SEGMENT))
       val indexFileName = segmentFileName.dropRight(3) + getIndexName()
-      if( Files.exists(Paths.get(indexFileName))) {
+      if (Files.exists(Paths.get(indexFileName))) {
         for (line <- Source.fromFile(indexFileName).getLines) {
           val indexVals = line.split(':')
           if (indexVals(0).toInt == columnIndex && indexVals(1).toString == value) {
-            readRange = (indexVals(2).toInt,indexVals(3).toInt)
+            readRange = indexVals.drop(2).grouped(2).toStream.map(pair => (pair(0).toInt, pair(1).toInt)).toList
           }
         }
       } else {
         // index file does not exist so we should read everything
-        readRange = (KasparDriver.READ_WHOLE_SEGMENT,KasparDriver.READ_WHOLE_SEGMENT)
+        readRange = Seq((KasparDriver.READ_WHOLE_SEGMENT, KasparDriver.READ_WHOLE_SEGMENT))
       }
       readRange
     }

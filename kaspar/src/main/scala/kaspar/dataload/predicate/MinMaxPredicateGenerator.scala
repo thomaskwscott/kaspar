@@ -2,13 +2,12 @@ package kaspar.dataload.predicate
 
 import com.jayway.jsonpath.JsonPath
 import kaspar.dataload.KasparDriver
-
-import java.io.File
-import java.nio.file.{Files, Paths}
 import kaspar.dataload.metadata.ColumnType
 import kaspar.dataload.metadata.ColumnType.ColumnType
 import kaspar.dataload.structure.{PositionRawRow, RawRow}
 
+import java.io.File
+import java.nio.file.{Files, Paths}
 import scala.io.Source
 
 class MinMaxPredicateGenerator() extends PredicateGenerator with Serializable {
@@ -28,7 +27,7 @@ class MinMaxPredicateGenerator() extends PredicateGenerator with Serializable {
             case _ => rawRow.getStringVal(column._1)
           }
         })
-        if(!columnRecords.isEmpty) {
+        if (!columnRecords.isEmpty) {
           column._2 match {
             case ColumnType.LONG => column._1.toString + ":" + columnRecords.map(_.asInstanceOf[Long]).min + ":" + columnRecords.map(_.asInstanceOf[Long]).max
             case ColumnType.DOUBLE => column._1.toString + ":" + columnRecords.map(_.asInstanceOf[Double]).min + ":" + columnRecords.map(_.asInstanceOf[Double]).max
@@ -41,7 +40,7 @@ class MinMaxPredicateGenerator() extends PredicateGenerator with Serializable {
   }
 
   override def segmentPredicateFromJson(jsonConfig: String):
-        (Seq[File], String, Int, String) => (Int, Int) = {
+  (Seq[File], String, Int, String) => Seq[(Int, Int)] = {
     /*
       json structure for greater than predicate:
       {
@@ -59,22 +58,22 @@ class MinMaxPredicateGenerator() extends PredicateGenerator with Serializable {
       (partitionFiles: Seq[File], topicName: String, partition: Int, segmentFileName: String) => {
         val indexFileName = segmentFileName.dropRight(3) + getIndexName()
         var shouldRead = true
-        if( Files.exists(Paths.get(indexFileName))) {
+        if (Files.exists(Paths.get(indexFileName))) {
           for (line <- Source.fromFile(indexFileName).getLines) {
             if (line.split(':')(0).toInt == columnIndex && line.split(':')(2).toInt <= threshold) {
               shouldRead = false
             }
           }
         }
-        if(shouldRead) {
-          (KasparDriver.READ_WHOLE_SEGMENT,KasparDriver.READ_WHOLE_SEGMENT)
+        if (shouldRead) {
+          Seq((KasparDriver.READ_WHOLE_SEGMENT, KasparDriver.READ_WHOLE_SEGMENT))
         } else {
-          (KasparDriver.DO_NOT_READ_SEGMENT,KasparDriver.DO_NOT_READ_SEGMENT)
+          Seq((KasparDriver.DO_NOT_READ_SEGMENT, KasparDriver.DO_NOT_READ_SEGMENT))
         }
       }
     } else {
       // we don't understand this predicate so read everything
-      (partitionFiles: Seq[File], topicName: String, partition: Int, segmentFileName: String) => (KasparDriver.READ_WHOLE_SEGMENT,KasparDriver.READ_WHOLE_SEGMENT)
+      (partitionFiles: Seq[File], topicName: String, partition: Int, segmentFileName: String) => Seq((KasparDriver.READ_WHOLE_SEGMENT, KasparDriver.READ_WHOLE_SEGMENT))
     }
   }
 

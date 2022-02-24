@@ -1,4 +1,5 @@
 package kaspar.dataload.predicate
+
 import com.jayway.jsonpath.JsonPath
 import kaspar.dataload.KasparDriver
 import kaspar.dataload.metadata.ColumnType.ColumnType
@@ -8,7 +9,7 @@ import java.io.File
 import scala.collection.mutable
 import scala.util.control.Breaks.{break, breakable}
 
-  class OffsetPredicateGenerator() extends PredicateGenerator with Serializable {
+class OffsetPredicateGenerator() extends PredicateGenerator with Serializable {
   override def getIndexName(): String = "offset"
 
   override def getIndexFunction(columnsToIndex: Seq[(Int, ColumnType)]): Seq[PositionRawRow] => String = {
@@ -16,7 +17,7 @@ import scala.util.control.Breaks.{break, breakable}
   }
 
   override def segmentPredicateFromJson(jsonConfig: String):
-  (Seq[File], String, Int, String) => (Int, Int) = {
+  (Seq[File], String, Int, String) => Seq[(Int, Int)] = {
 
     val config = getConfigFromJson(jsonConfig)
     val predicateType = config._1
@@ -26,7 +27,7 @@ import scala.util.control.Breaks.{break, breakable}
 
         if (!partitionThresholds.contains(partition)) {
           // if you don't provide a threshold for this partition we will read segments regardless
-          (KasparDriver.READ_WHOLE_SEGMENT, KasparDriver.READ_WHOLE_SEGMENT)
+          Seq((KasparDriver.READ_WHOLE_SEGMENT, KasparDriver.READ_WHOLE_SEGMENT))
         } else {
           val offsetSegmentsMap = partitionFiles.map(file => file.getName.dropRight(4).toInt -> file.getPath).toMap
           val offsetSegments = offsetSegmentsMap.keys.toArray.sorted
@@ -35,7 +36,7 @@ import scala.util.control.Breaks.{break, breakable}
 
           // if there is only 1 segment or this is the last segment we can bail out here as we will always read it
           if (offsetSegments.length == 1 || segmentFileName == offsetSegmentsMap(offsetSegments.last)) {
-            (KasparDriver.READ_WHOLE_SEGMENT, KasparDriver.READ_WHOLE_SEGMENT)
+            Seq((KasparDriver.READ_WHOLE_SEGMENT, KasparDriver.READ_WHOLE_SEGMENT))
           } else {
             // find the segment which contains the crossing offset.
             val threshold = partitionThresholds(partition)
@@ -56,20 +57,20 @@ import scala.util.control.Breaks.{break, breakable}
               }
             }
             if (shouldRead) {
-              (KasparDriver.READ_WHOLE_SEGMENT, KasparDriver.READ_WHOLE_SEGMENT)
+              Seq((KasparDriver.READ_WHOLE_SEGMENT, KasparDriver.READ_WHOLE_SEGMENT))
             } else {
-              (KasparDriver.DO_NOT_READ_SEGMENT, KasparDriver.DO_NOT_READ_SEGMENT)
+              Seq((KasparDriver.DO_NOT_READ_SEGMENT, KasparDriver.DO_NOT_READ_SEGMENT))
             }
           }
         }
       }
     } else {
       // we don't understand this predicate so read everything
-      (partitionFiles: Seq[File], topicName: String, partition: Int, segmentFileName: String) => (KasparDriver.READ_WHOLE_SEGMENT,KasparDriver.READ_WHOLE_SEGMENT)
+      (partitionFiles: Seq[File], topicName: String, partition: Int, segmentFileName: String) => Seq((KasparDriver.READ_WHOLE_SEGMENT, KasparDriver.READ_WHOLE_SEGMENT))
     }
   }
 
-  private def getConfigFromJson(jsonConfig: String): (String,Map[Int,Long]) = {
+  private def getConfigFromJson(jsonConfig: String): (String, Map[Int, Long]) = {
     /*
     {
       "predicateType": "GreaterThan"
@@ -83,7 +84,7 @@ import scala.util.control.Breaks.{break, breakable}
     val predicateType = jsonConfigObj.read[String]("$.predicateType")
     val thresholdCount = jsonConfigObj.read[Int]("$.partitionThresholds.length()")
     val partitionThresholds = mutable.Map[Int, Long]()
-    for( thresholdIndex <- 0 to thresholdCount-1)  {
+    for (thresholdIndex <- 0 to thresholdCount - 1) {
       val partition = jsonConfigObj.read[Int]("$.partitionThresholds[" + thresholdIndex + "].partition")
       val threshold = jsonConfigObj.read[Int]("$.partitionThresholds[" + thresholdIndex + "].threshold")
       partitionThresholds(partition) = threshold;
