@@ -217,7 +217,11 @@ class KasparDriver(clientProps: Properties) extends Serializable {
                                 rowDeserializer: RowDeserializer,
                                 rowPredicates: Seq[RawRow => Boolean]): Seq[PositionRawRow] = {
     val records: FileRecords = FileRecords.open(segmentFile)
-    rowsFromRecords(records, partition, ranges, rowDeserializer, rowPredicates)
+    val startTime = System.currentTimeMillis();
+    System.out.println("About to read segment: " + segmentFile.getName + ", partition: " + partition + ",numBatchRanges: " + ranges.size + ", startTime: " + startTime)
+    val rows = rowsFromRecords(records, partition, ranges, rowDeserializer, rowPredicates)
+    System.out.println("Done reading segment: " + segmentFile.getName + ", rowsRead: " + rows.size + ", timeTaken: " + (System.currentTimeMillis() - startTime) + "ms")
+    rows
   }
 
   private def getSegments(dataDirs: Seq[String], topicName: String, partition: Int) = {
@@ -243,19 +247,36 @@ class KasparDriver(clientProps: Properties) extends Serializable {
                               rowPredicates: Seq[(RawRow) => Boolean]): Seq[PositionRawRow] = {
     // we're reading the whole records
     if (ranges.head._1 == READ_WHOLE_SEGMENT || !records.isInstanceOf[FileRecords]) {
+      System.out.println("Reading whole segment, partition: " + partition)
       records.batches.asScala.flatMap(batch => {
         batchToRawRows(partition, batch, rowDeserializer, rowPredicates)
       }).toSeq
     } else {
       // we're reading a subset of records
-      ranges.flatMap(range => {
+      System.out.println("Reading segment using indexed ranges, numRanges: " + ranges.size + ", partition: " + partition)
+      var segmentBatchToDataRowsTimeTaken: Long = 0
+      val segmentStartTime = System.currentTimeMillis();
+
+      val allRows = ranges.flatMap(range => {
         val startPosition = range._1
         val endPosition = range._2
+        val startTime = System.currentTimeMillis();
+        System.out.println("About to read range for partition:" + partition + " startPosition: " + startPosition + ", endPosition: " + endPosition + ", startTime: " + startTime)
+        var rangeToDataRowsTimeTaken: Long = 0
         val batchIter = records.asInstanceOf[FileRecords].batchesFrom(startPosition).asScala.iterator
-        batchIter.takeWhile(batch => batch.position() == endPosition).flatMap(batch => {
-          batchToRawRows(partition, batch, rowDeserializer, rowPredicates)
+        val rangeRows = batchIter.takeWhile(batch => batch.position() == endPosition).flatMap(batch => {
+          val startTime = System.currentTimeMillis();
+          val rows = batchToRawRows(partition, batch, rowDeserializer, rowPredicates)
+          val timeTaken = (System.currentTimeMillis() - startTime)
+          rangeToDataRowsTimeTaken += timeTaken
+          segmentBatchToDataRowsTimeTaken += timeTaken
+          rows
         })
+        System.out.println("Done reading range for partition:" + partition + ", rowsRead: " + rangeRows.size + ", rangeToDataRowsTimeTaken: " + rangeToDataRowsTimeTaken + "ms, timeTaken: " + (System.currentTimeMillis() - startTime) + "ms")
+        rangeRows
       })
+      System.out.println("Done reading partition:" + partition + " , rowsRead: " + allRows.size + ",segmentBatchToDataRowsTimeTaken: " + segmentBatchToDataRowsTimeTaken + "ms, timeTaken: " + (System.currentTimeMillis() - segmentStartTime) + "ms")
+      allRows
     }
   }
 
