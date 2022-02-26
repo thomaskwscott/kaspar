@@ -109,7 +109,7 @@ class KasparRunner (val clientProperties: Properties,
 
       val predicatesArrayNode = tableSpec.get("predicates")
       val rowPredicates = new mutable.ListBuffer[(RawRow => Boolean)]
-      val segmentPredicates = new mutable.ListBuffer[((Seq[File], String, Int, String) => Boolean)]
+      val segmentPredicates = new mutable.ListBuffer[((Seq[File], String, Int, String) => Seq[(Int,Int)])]
 
       predicatesArrayNode.forEach( predicateNode => {
         val generatorClass = Class.forName(predicateNode.get("generatorClass").asText())
@@ -141,14 +141,14 @@ class KasparRunner (val clientProperties: Properties,
   }
 
   def parseStatement(statement: String): (Seq[String],String) = {
-    val tables = getTables(statement);
+    val tables = getStatementHints(statement);
     (tables, statement)
   }
 
   def getStatementHints(statement: String): Seq[String] = {
     val statementAnalyzer = new StatementAnalyzer(statement)
-    val tables = statementAnalyzer.getTableList()
+    val tables = statementAnalyzer.getTableList().map(_.name)
     val columnConstants = statementAnalyzer.getColumnConstants()
-
+    tables
   }
 }

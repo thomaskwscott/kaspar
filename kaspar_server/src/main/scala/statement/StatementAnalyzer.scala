@@ -78,8 +78,12 @@ class StatementAnalyzer (val statement: String)
   }
 
   override def visit(table: Table): Unit = {
-    tables += TableNameAlias(table.getName, table.getAlias.getName)
-
+    val tableAlias = if (table.getAlias != null) {
+      table.getAlias.getName
+    } else {
+      ""
+    }
+    tables += TableNameAlias(table.getName, tableAlias)
   }
 
   override def visit(subJoin: SubJoin): Unit = {

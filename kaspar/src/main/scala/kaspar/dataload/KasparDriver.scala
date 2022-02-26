@@ -112,10 +112,10 @@ class KasparDriver(clientProps: Properties) extends Serializable {
     val indexesCreated = sparkContext.makeRDD(perReplicaAssignments).flatMap((taskAssignment: TaskAssignment) => {
       val hosts = taskAssignment.locations.map(l => l.host)
       val actualHost = java.net.InetAddress.getLocalHost().getHostName()
-      if (!hosts.contains(actualHost)) {
+      if (!(hosts.map(host => host.substring(0,actualHost.length))).contains(actualHost)) {
         Seq((actualHost, "partition: " + taskAssignment.partitionId, false))
       } else {
-        val dataDirs = taskAssignment.locations.filter(l => l.host == actualHost)(0).dataDirs
+        val dataDirs = taskAssignment.locations.filter(l => l.host.startsWith(actualHost))(0).dataDirs
         // remove the latest segment as we will never index this because it could be being written to
         val segments = getSegments(dataDirs, topicName, taskAssignment.partitionId).sorted.dropRight(1)
         segments.map(segment => {
