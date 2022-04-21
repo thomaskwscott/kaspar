@@ -18,7 +18,7 @@ column -> value -> repeating interval ranges for value in segment, for example:
 Using the above a segment predicate can reduce the amount of segment it needs to read
  */
 class MapIndexPredicateGenerator() extends PredicateGenerator with Serializable {
-  val MAX_GAP: Int = 20000; // 10 MB - maximum gap between records in the interval to trigger closure of interval and start of a new one.
+  val MAX_GAP: Int = 0; // 10 MB - maximum gap between records in the interval to trigger closure of interval and start of a new one.
 
   override def getIndexName(): String = "map.index"
 
